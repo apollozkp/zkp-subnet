@@ -18,7 +18,7 @@
 import ctypes
 from typing import Tuple
 
-LIB_PATH = "/root/subnet/libcairo_platinum_prover.so"
+LIB_PATH = "/root/zkp-subnet/libcairo_platinum_prover.so"
 
 class ByteData(ctypes.Structure):
     _fields_ = [("data", ctypes.POINTER(ctypes.c_ubyte)),
