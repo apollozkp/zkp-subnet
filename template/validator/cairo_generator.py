@@ -44,7 +44,7 @@ def generate_random_operations_on_input(num_operations):
     return operations, previous_result_var  # Return all operations and the last result variable
 
 def generate_main_function():
-    num_operations = random.randint(1000, 20000)  # Decide the number of operations randomly
+    num_operations = random.randint(10000, 50000)  # Decide the number of operations randomly
     operations, last_result_var = generate_random_operations_on_input(num_operations)
 
     operations_code = "\n    ".join(operations)
