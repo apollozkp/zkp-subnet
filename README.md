@@ -49,11 +49,11 @@ Very minimally, you will want to at least have:
 Next, you will want to set up a coldkey and hotkey, if you are planning on mining or validating on the Apollo subnet.
 
 ```bash
-btcli wallet new_coldkey --wallet.name <your_name>
-btcli wallet new_hotkey --wallet.name <your_name> --wallet.hotkey default
+btcli wallet new_coldkey --wallet.name <your_wallet_name>
+btcli wallet new_hotkey --wallet.name <your_wallet_name> --wallet.hotkey <your_hotkey_name>
 ```
 
-Be sure to replace `<your_name>` with a name of your choosing. Ensure that you use the same name for both commands.
+Be sure to replace `<your_wallet_name>` and `<your_hotkey_name>` with names of your choosing.
 
 TODO: get network uids so that we can instruct users on how to deploy
 
@@ -70,18 +70,18 @@ cd zkp-subnet
 Finally, to start a miner, run:
 
 ```bash
-make miner <your_name>
+make miner WALLET_NAME=<your_wallet_name> HOTKEY_NAME=<your_hotkey_name>
 ```
 
-where `<your_name>` is the name of your wallet.
+where `<your_wallet_name>` is the name of your wallet, and `<your_hotkey_name>` is the name of your hotkey.
 
 To start a validator, run:
 
 ```bash
-make validator <your_name>
+make validator WALLET_NAME=<your_wallet_name> HOTKEY_NAME=<your_hotkey_name>
 ```
 
-where `<your_name>` is the name of your wallet.
+where `<your_wallet_name>` is the name of your wallet, and `<your_hotkey_name>` is the name of your hotkey.
 
 ### Validators only
 
