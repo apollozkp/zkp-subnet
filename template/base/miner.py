@@ -126,6 +126,8 @@ class BaseMinerNeuron(BaseNeuron):
                 # Sync metagraph and potentially set weights.
                 self.sync()
                 self.step += 1
+                # set last update for ourselves, as this does not get changed for some reason
+                self.metagraph.last_update[self.uid] = self.block
 
             # If someone intentionally stops the miner, it'll safely terminate operations.
             except KeyboardInterrupt:
