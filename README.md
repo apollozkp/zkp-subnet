@@ -28,6 +28,57 @@ For this version 0, it is advised that validators run slightly stronger hardware
 - At least 16 GB RAM (DDR4 or higher)
 - 200 GB storage
 
+## Getting started
+
+Very minimally, you will want to at least have:
+
+- Python 3.10 or higher
+- [Bittensor CLI](https://github.com/opentensor/bittensor/blob/master/README.md#install) installed
+
+Next, you will want to set up a coldkey and hotkey, if you are planning on mining or validating on the Apollo subnet.
+
+```bash
+btcli wallet new_coldkey --wallet.name <your_name>
+btcli wallet new_hotkey --wallet.name <your_name> --wallet.hotkey default
+```
+
+Be sure to replace `<your_name>` with a name of your choosing. Ensure that you use the same name for both commands.
+
+TODO: get network uids so that we can instruct users on how to deploy
+
+Then, ensure you have the subnet code on your machine.
+
+> NOTE: THE CODE ALWAYS ASSUMES THAT THE REPOSITORY IS CLONED IN THE `/root` DIRECTORY. FAILURE TO DO SO WILL CAUSE BREAKAGE OF THE MINER AND VALIDATOR NEURONS.
+
+```bash
+git clone https://github.com/apollozkp/zkp-subnet.git
+cd zkp-subnet
+```
+
+Finally, to start a miner, run:
+
+```bash
+make miner <your_name>
+```
+
+where `<your_name>` is the name of your wallet.
+
+To start a validator, run:
+
+```bash
+make validator <your_name>
+```
+
+where `<your_name>` is the name of your wallet.
+
+### Validators only
+
+When registered and running, you can increase your stake to the subnet by running:
+
+```bash
+btcli stake add --wallet.name validator --wallet.hotkey default
+```
+
 ## Contributing
 
 Please see the [contribution guidelines](./contrib/CONTRIBUTING.md) for details.
