@@ -1,6 +1,6 @@
-# Contributing to Bittensor Subnet Development
+# Contributing to Apollo Subnet Development
 
-The following is a set of guidelines for contributing to the Bittensor ecosystem. These are **HIGHLY RECOMMENDED** guidelines, but not hard-and-fast rules. Use your best judgment, and feel free to propose changes to this document in a pull request.
+The following is a set of guidelines for contributing to the Apollo ZKP subnet. These are **HIGHLY RECOMMENDED** guidelines, but not hard-and-fast rules. Use your best judgment, and feel free to propose changes to this document in a pull request.
 
 ## Table Of Contents
 1. [How Can I Contribute?](#how-can-i-contribute)
@@ -48,7 +48,6 @@ Here is a high-level summary:
 Patchsets and enhancements should always be focused. A pull request could add a feature, fix a bug, or refactor code, but it should not contain a mixture of these. Please also avoid 'super' pull requests which attempt to do too much, are overly large, or overly complex as this makes review difficult. 
 
 Specifically, pull requests must adhere to the following criteria:
-- Contain fewer than 50 files. PRs with more than 50 files will be closed.
 - If a PR introduces a new feature, it *must* include corresponding tests.
 - Other PRs (bug fixes, refactoring, etc.) should ideally also have tests, as they provide proof of concept and prevent regression.
 - Categorize your PR properly by using GitHub labels. This aids in the review process by informing reviewers about the type of change at a glance.
@@ -99,7 +98,7 @@ After you submit a pull request, it will be reviewed by the maintainers. They ma
 > Note: Be sure to merge the latest from "upstream" before making a pull request:
 
 ```bash
-git remote add upstream https://github.com/opentensor/bittensor.git # TODO(developer): replace with your repo URL
+git remote add upstream https://github.com/apollozkp/zkp-subnet.git
 git fetch upstream
 git merge upstream/<your-branch-name>
 git push origin <your-branch-name>
