@@ -112,22 +112,21 @@ class BaseMinerNeuron(BaseNeuron):
         # This loop maintains the miner's operations until intentionally stopped.
         while not self.should_exit:
             try:
-                while (
-                    self.block - self.metagraph.last_update[self.uid]
-                    < self.config.neuron.epoch_length
-                ):
-                    # Wait before checking again.
-                    time.sleep(1)
-
-                    # Check if we should exit.
-                    if self.should_exit:
-                        break
-
-                # Sync metagraph and potentially set weights.
-                self.sync()
-                self.step += 1
-                # set last update for ourselves, as this does not get changed for some reason
-                self.metagraph.last_update[self.uid] = self.block
+                if step % 10 == 0:
+                    metagraph = subtensor.metagraph(config.netuid)
+                    log = (
+                        f"Step:{step} | "
+                        f"Block:{metagraph.block.item()} | "
+                        f"Stake:{metagraph.S[my_subnet_uid]} | "
+                        f"Rank:{metagraph.R[my_subnet_uid]} | "
+                        f"Trust:{metagraph.T[my_subnet_uid]} | "
+                        f"Consensus:{metagraph.C[my_subnet_uid] } | "
+                        f"Incentive:{metagraph.I[my_subnet_uid]} | "
+                        f"Emission:{metagraph.E[my_subnet_uid]}"
+                    )
+                    bt.logging.info(log)
+                step += 1
+                time.sleep(1)
 
             # If someone intentionally stops the miner, it'll safely terminate operations.
             except KeyboardInterrupt:
