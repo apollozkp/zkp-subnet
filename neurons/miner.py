@@ -31,8 +31,6 @@ class Miner(BaseMinerNeuron):
     def __init__(self, config=None):
         super(Miner, self).__init__(config=config)
 
-        # TODO(developer): Anything specific to your use case you can do here
-
     async def forward(
         self, synapse: template.protocol.Trace
     ) -> template.protocol.Trace:
