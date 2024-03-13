@@ -28,6 +28,10 @@ For this version 0, it is advised that validators run slightly stronger hardware
 - At least 16 GB RAM (DDR4 or higher)
 - 200 GB storage
 
+## Contributing
+
+Please see the [contribution guidelines](./contrib/CONTRIBUTING.md) for details.
+
 ## License
 This repository is licensed under the MIT License.
 ```text
