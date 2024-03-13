@@ -78,7 +78,7 @@ async def forward(self):
         axons=[self.metagraph.axons[uid] for uid in miner_uids],
         synapse=trace, # send in the execution trace
         deserialize=True,
-        timeout=30,
+        timeout=10,
     )
 
     # Log the results for monitoring purposes.
