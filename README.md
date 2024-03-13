@@ -1,6 +1,6 @@
 <div align="center">
 
-# **Apollo Collaborate Zero-knowledge Proof Generation Subnet**
+# **Apollo Collaborative Zero-knowledge Proof Generation Subnet**
 [![Discord Chat](https://img.shields.io/discord/308323056592486420.svg)](https://discord.gg/bittensor)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) 
 
