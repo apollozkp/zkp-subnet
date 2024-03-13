@@ -12,6 +12,16 @@
 
 Bittensor subnets are a great way to provide open APIs aimed at outsourcing certain computational workloads, whether it be model inference, distributed learning or other highly specific compute. However, a key insight seems to be missing from most subnets out there today, which is that almost none of them seem to coordinate their miners to collaborate in order to achieve greater computational power; instead, they seem to often either perform computation redundantly, or miners are instead pitted in competition with each other, which may allow for a free market dynamic in the way of creating models, but severely limits the size of said models. We believe that Bittensor will only be fully leveraged if subnets begin thinking more deeply about collaborative mining, rather than redundant or competitive strategies. This is where Apollo comes in; a Bittensor subnet aimed at fruitfully combining compute power to achieve competitive results on the open market.
 
+## Roadmap
+
+- [ ] Deploy v0 on Bittensor testnet | In progress...
+- [ ] Deploy v0 on Bittensor mainnet
+- [ ] Implement and deploy vanilla-PLONK style constraint aggregation
+- [ ] Extend constraint aggregation support to any type of circuit (KZG only)
+- [ ] Explore segmented lookup tables in constraint aggregation work
+- [ ] Perform further research into distributing work for other commitment schemes
+- [ ] Explore other fruitful opportunities for miner collaboration outside of ZKP generation
+
 ## Hardware requirements
 
 For this version 0, it is advised that validators run slightly stronger hardware than miners do. This is needed due to the computational cost of converting Cairo programs to a set of constraints which a miner can then prove to signal his capability.
@@ -51,6 +61,7 @@ Then, ensure you have the subnet code on your machine.
 > NOTE: THE CODE ALWAYS ASSUMES THAT THE REPOSITORY IS CLONED IN THE `/root` DIRECTORY. FAILURE TO DO SO WILL CAUSE BREAKAGE OF THE MINER AND VALIDATOR NEURONS.
 
 ```bash
+cd /root
 git clone https://github.com/apollozkp/zkp-subnet.git
 cd zkp-subnet
 ```
