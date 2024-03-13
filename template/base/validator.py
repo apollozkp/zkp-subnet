@@ -138,8 +138,8 @@ class BaseValidatorNeuron(BaseNeuron):
         bt.logging.info(f"Validator starting at block: {self.block}")
 
         # This loop maintains the validator's operations until intentionally stopped.
-        try:
-            while True:
+        while True:
+            try:
                 bt.logging.info(f"step({self.step}) block({self.block})")
 
                 # Run multiple forwards concurrently.
@@ -154,18 +154,18 @@ class BaseValidatorNeuron(BaseNeuron):
 
                 self.step += 1
 
-        # If someone intentionally stops the validator, it'll safely terminate operations.
-        except KeyboardInterrupt:
-            self.axon.stop()
-            bt.logging.success("Validator killed by keyboard interrupt.")
-            exit()
+            # If someone intentionally stops the validator, it'll safely terminate operations.
+            except KeyboardInterrupt:
+                self.axon.stop()
+                bt.logging.success("Validator killed by keyboard interrupt.")
+                exit()
 
-        # In case of unforeseen errors, the validator will log the error and continue operations.
-        except Exception as err:
-            bt.logging.error("Error during validation", str(err))
-            bt.logging.debug(
-                print_exception(type(err), err, err.__traceback__)
-            )
+            # In case of unforeseen errors, the validator will log the error and continue operations.
+            except Exception as err:
+                bt.logging.error("Error during validation", str(err))
+                bt.logging.debug(
+                    print_exception(type(err), err, err.__traceback__)
+                )
 
     def run_in_background_thread(self):
         """

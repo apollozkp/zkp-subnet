@@ -30,7 +30,6 @@ class DoubleByteData(ctypes.Structure):
 
 def make_proof(main_trace: bytes, pub_inputs: bytes) -> bytes:
     prover = ctypes.CDLL(LIB_PATH)
-
     prover.generate_proof_from_trace.argtypes = [ctypes.POINTER(ctypes.c_ubyte), ctypes.c_size_t,ctypes.POINTER(ctypes.c_ubyte), ctypes.c_size_t]
     prover.generate_proof_from_trace.restype = ctypes.POINTER(ByteData)
 

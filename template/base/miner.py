@@ -110,8 +110,8 @@ class BaseMinerNeuron(BaseNeuron):
         bt.logging.info(f"Miner starting at block: {self.block}")
 
         # This loop maintains the miner's operations until intentionally stopped.
-        try:
-            while not self.should_exit:
+        while not self.should_exit:
+            try:
                 while (
                     self.block - self.metagraph.last_update[self.uid]
                     < self.config.neuron.epoch_length
@@ -127,15 +127,15 @@ class BaseMinerNeuron(BaseNeuron):
                 self.sync()
                 self.step += 1
 
-        # If someone intentionally stops the miner, it'll safely terminate operations.
-        except KeyboardInterrupt:
-            self.axon.stop()
-            bt.logging.success("Miner killed by keyboard interrupt.")
-            exit()
+            # If someone intentionally stops the miner, it'll safely terminate operations.
+            except KeyboardInterrupt:
+                self.axon.stop()
+                bt.logging.success("Miner killed by keyboard interrupt.")
+                exit()
 
-        # In case of unforeseen errors, the miner will log the error and continue operations.
-        except Exception as e:
-            bt.logging.error(traceback.format_exc())
+            # In case of unforeseen errors, the miner will log the error and continue operations.
+            except Exception as e:
+                bt.logging.error(traceback.format_exc())
 
     def run_in_background_thread(self):
         """
