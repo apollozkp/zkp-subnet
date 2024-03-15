@@ -129,7 +129,7 @@ class BaseMinerNeuron(BaseNeuron):
                     )
                     bt.logging.info(log)
                 step += 1
-                time.sleep(1)
+                time.sleep(5)
 
             # If someone intentionally stops the miner, it'll safely terminate operations.
             except KeyboardInterrupt:
