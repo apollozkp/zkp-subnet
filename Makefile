@@ -13,7 +13,7 @@ ensure_deps:
 
 prover: ensure_deps clean
 	git clone https://github.com/apollozkp/lambdaworks
-	cd lambdaworks && . "$$HOME/.cargo/env" && cargo build --release && mv target/release/libcairo_platinum_prover.so ../
+	cd lambdaworks && . "$$HOME/.cargo/env" && cargo build --release && mv target/release/libcairo_platinum_prover.so ../prover.so
 
 check-env:
 	@if [ -z "$${WALLET_NAME}" ]; then \
