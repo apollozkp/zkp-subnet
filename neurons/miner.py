@@ -19,13 +19,10 @@ import time
 import typing
 import base64
 import bittensor as bt
-from template.utils.rust import make_proof
-
-# Bittensor Miner Template:
-import template
+from utils.rust import make_proof
 
 # import base miner class which takes care of most of the boilerplate
-from template.base.miner import BaseMinerNeuron
+from base.miner import BaseMinerNeuron
 
 class Miner(BaseMinerNeuron):
     def __init__(self, config=None):
@@ -80,7 +77,6 @@ class Miner(BaseMinerNeuron):
 
         Otherwise, allow the request to be processed further.
         """
-        # TODO(developer): Define how miners should blacklist requests.
         uid = self.metagraph.hotkeys.index(synapse.dendrite.hotkey)
         if (
             not self.config.blacklist.allow_non_registered
@@ -125,17 +121,16 @@ class Miner(BaseMinerNeuron):
         Example priority logic:
         - A higher stake results in a higher priority value.
         """
-        # TODO(developer): Define how miners should prioritize requests.
         caller_uid = self.metagraph.hotkeys.index(
             synapse.dendrite.hotkey
         )  # Get the caller index.
-        prirority = float(
+        priority = float(
             self.metagraph.S[caller_uid]
         )  # Return the stake as the priority.
         bt.logging.trace(
-            f"Prioritizing {synapse.dendrite.hotkey} with value: ", prirority
+            f"Prioritizing {synapse.dendrite.hotkey} with value: ", priority
         )
-        return prirority
+        return priority
 
 
 # This is the main function, which runs the miner.

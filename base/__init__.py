@@ -15,24 +15,17 @@
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
-import torch
-from typing import List
+# Define the version of the base module.
+__version__ = "0.0.0"
+version_split = __version__.split(".")
+__spec_version__ = (
+    (1000 * int(version_split[0]))
+    + (10 * int(version_split[1]))
+    + (1 * int(version_split[2]))
+)
 
-# it's sufficient for us to check exact matches between proof bytes and pub inputs bytes.
-# verifying the proof would be redundant at this stage, but a later update would likely make
-# it more sensible to opt for proof verification instead of byte matching
-def reward(proof_bytes: bytes, response_proof: bytes) -> float:
-    if proof_bytes != response_proof:
-        return 0.0
-
-    return 1.0
-
-
-def get_rewards(
-    self,
-    proof_bytes: bytes,
-    responses: List[bytes],
-) -> torch.FloatTensor:
-    return torch.FloatTensor(
-        [reward(proof_bytes, response_proof) for response_proof in responses]
-    ).to(self.device)
+# Import all submodules.
+from . import miner
+from . import neuron
+from . import protocol
+from . import validator
