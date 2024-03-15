@@ -3,15 +3,16 @@
 clean:
 	rm prover
 
-ensure-deps:
+.ensure-deps:
 	sudo apt-get update && sudo apt-get install libgmp-dev # we need gmp for cairo lib
 	. "$$HOME/.cargo/env" # source cargo just in case shell was never reloaded
 	@command -v cargo >/dev/null 2>&1 || { \
 		echo >&2 "Rust not installed. Installing..."; \
 		curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y; \
 	}
+	@touch .ensure-deps
 
-prover: ensure-deps 
+prover: .ensure-deps 
 	rm -rf lambdaworks # remove in case of a failed build
 	git clone https://github.com/apollozkp/lambdaworks
 	cd lambdaworks && . "$$HOME/.cargo/env" && cargo build --release && mv target/release/libcairo_platinum_prover.so ../prover
