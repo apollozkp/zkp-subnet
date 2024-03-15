@@ -15,8 +15,11 @@
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
+import base64
+import json
 import random
 import bittensor as bt
+from base.protocol import Trace
 from utils.rust import make_proof
 from utils.rust import make_trace_and_pub_inputs
 from starkware.cairo.lang.cairo_constants import DEFAULT_PRIME
