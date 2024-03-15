@@ -5,7 +5,8 @@ PYTHON_SETUP = pip install -r requirements.txt && python3 -m pip install -e .
 ensure_deps:
 	@command -v cargo >/dev/null 2>&1 || { \
 		echo >&2 "Rust not installed. Installing..."; \
-		sudo apt-get update && sudo apt-get install -y rust; \
+		curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y; \
+		. "$HOME/.cargo/env"; \
 	}
 
 prover: ensure_deps
