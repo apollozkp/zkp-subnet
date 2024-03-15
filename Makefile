@@ -1,4 +1,4 @@
-.PHONY: ensure-deps miner validator check-env clean miner-staging validator-staging miner-testnet validator-testnet
+.PHONY: miner validator check-env clean miner-staging validator-staging miner-testnet validator-testnet
 
 clean:
 	rm prover
