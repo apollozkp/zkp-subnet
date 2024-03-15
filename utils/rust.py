@@ -21,9 +21,6 @@ from typing import Tuple
 
 here = path.abspath(path.dirname(__file__))
 LIB_PATH = path.join(here, "prover")
-print(here)
-print(LIB_PATH)
-
 
 class ByteData(ctypes.Structure):
     _fields_ = [("data", ctypes.POINTER(ctypes.c_ubyte)),
