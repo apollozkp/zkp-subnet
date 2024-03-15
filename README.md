@@ -43,7 +43,7 @@ For this version 0, it is advised that validators run slightly stronger hardware
 
 Very minimally, you will want to at least have:
 
-- Python 3.10 or higher
+- Python 3.8 or higher
 - [Bittensor CLI](https://github.com/opentensor/bittensor/blob/master/README.md#install) installed
 
 Next, you will want to set up a coldkey and hotkey, if you are planning on mining or validating on the Apollo subnet.
