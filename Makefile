@@ -1,9 +1,9 @@
-.PHONY: ensure_deps miner validator check-env clean miner-staging validator-staging miner-testnet validator-testnet
+.PHONY: ensure-deps miner validator check-env clean miner-staging validator-staging miner-testnet validator-testnet
 
 clean:
 	rm prover
 
-ensure_deps:
+ensure-deps:
 	sudo apt-get update && sudo apt-get install libgmp-dev # we need gmp for cairo lib
 	. "$$HOME/.cargo/env" # source cargo just in case shell was never reloaded
 	@command -v cargo >/dev/null 2>&1 || { \
@@ -11,7 +11,7 @@ ensure_deps:
 		curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y; \
 	}
 
-prover: ensure_deps 
+prover: ensure-deps 
 	rm -rf lambdaworks # remove in case of a failed build
 	git clone https://github.com/apollozkp/lambdaworks
 	cd lambdaworks && . "$$HOME/.cargo/env" && cargo build --release && mv target/release/libcairo_platinum_prover.so ../prover
