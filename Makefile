@@ -6,7 +6,7 @@ ensure_deps:
 	@command -v cargo >/dev/null 2>&1 || { \
 		echo >&2 "Rust not installed. Installing..."; \
 		curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y; \
-		. "$HOME/.cargo/env"; \
+		. "$$HOME/.cargo/env"; \
 	}
 
 prover: ensure_deps
