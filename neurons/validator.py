@@ -74,21 +74,11 @@ class Validator(BaseValidatorNeuron):
         bt.logging.info(f"Received responses: {responses}")
 
         # Adjust the scores based on responses from miners.
-        rewards = get_rewards(self, proof_bytes, responses)
+        rewards = self.get_rewards(proof_bytes, responses)
 
         bt.logging.info(f"Scored responses: {rewards}")
         # Update the scores based on the rewards. You may want to define your own update_scores function for custom behavior.
         self.update_scores(rewards, miner_uids)
-
-    # it's sufficient for us to check exact matches between proof bytes and pub inputs bytes.
-    # verifying the proof would be redundant at this stage, but a later update would likely make
-    # it more sensible to opt for proof verification instead of byte matching
-    def reward(proof_bytes: bytes, response_proof: bytes) -> float:
-        if proof_bytes != response_proof:
-            return 0.0
-
-        return 1.0
-
 
     def get_rewards(
         self,
@@ -98,6 +88,15 @@ class Validator(BaseValidatorNeuron):
         return torch.FloatTensor(
             [reward(proof_bytes, response_proof) for response_proof in responses]
         ).to(self.device)
+
+# it's sufficient for us to check exact matches between proof bytes and pub inputs bytes.
+# verifying the proof would be redundant at this stage, but a later update would likely make
+# it more sensible to opt for proof verification instead of byte matching
+def reward(proof_bytes: bytes, response_proof: bytes) -> float:
+    if proof_bytes != response_proof:
+        return 0.0
+
+    return 1.0
 
 
 # The main function parses the configuration and runs the validator.
