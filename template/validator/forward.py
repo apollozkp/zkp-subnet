@@ -77,9 +77,17 @@ async def forward(self):
     responses = await self.dendrite(
         axons=[self.metagraph.axons[uid] for uid in miner_uids],
         synapse=trace, # send in the execution trace
-        deserialize=True,
+        deserialize=False, # bogus responses shouldn't kill the validation flow
         timeout=10,
     )
+
+    def try_deserialize(item: Trace):
+        try:
+            return item.deserialize()
+        except:
+            return bytes()
+
+    responses = [try_deserialize(item) for item in responses]
 
     # Log the results for monitoring purposes.
     bt.logging.info(f"Received responses: {responses}")
