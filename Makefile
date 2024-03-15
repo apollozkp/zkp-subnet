@@ -29,23 +29,23 @@ python-setup:
 	pip install -r requirements.txt && python3 -m pip install -e .
 
 # TODO: set netuid and subtensor
-miner: prover clean check-env python-setup
+miner: prover python-setup clean check-env
 	python neurons/miner.py --netuid 1 --wallet.name $(WALLET_NAME) --wallet.hotkey $(HOTKEY_NAME) --logging.debug # do this via pm2
 
 # TODO: set netuid and subtensor
-validator: prover clean check-env python-setup
+validator: prover python-setup clean check-env
 	python neurons/validator.py --netuid 1 --wallet.name $(WALLET_NAME) --wallet.hotkey $(HOTKEY_NAME) --logging.debug # do this via pm2
 
 # TODO: set netuid and subtensor
-miner-testnet: prover clean check-env python-setup
+miner-testnet: prover python-setup clean check-env
 	python neurons/miner.py --netuid 1 --wallet.name $(WALLET_NAME) --wallet.hotkey $(HOTKEY_NAME) --logging.debug # do this via pm2
 
 # TODO: set netuid and subtensor
-validator-testnet: prover clean check-env python-setup
+validator-testnet: prover python-setup clean check-env
 	python neurons/validator.py --netuid 1 --wallet.name $(WALLET_NAME) --wallet.hotkey $(HOTKEY_NAME) --logging.debug # do this via pm2
 
-miner-staging: prover clean check-env python-setup
+miner-staging: prover python-setup clean check-env
 	python neurons/miner.py --netuid 1 --subtensor.chain_endpoint ws://127.0.0.1:9946 --wallet.name $(WALLET_NAME) --wallet.hotkey $(HOTKEY_NAME) --logging.debug # do this via pm2
 
-validator-staging: prover clean check-env python-setup
+validator-staging: prover python-setup clean check-env
 	python neurons/validator.py --netuid 1 --subtensor.chain_endpoint ws://127.0.0.1:9946 --wallet.name $(WALLET_NAME) --wallet.hotkey $(HOTKEY_NAME) --logging.debug # do this via pm2
