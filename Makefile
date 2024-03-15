@@ -6,12 +6,11 @@ ensure_deps:
 	@command -v cargo >/dev/null 2>&1 || { \
 		echo >&2 "Rust not installed. Installing..."; \
 		curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y; \
-		. "$$HOME/.cargo/env"; \
 	}
 
 prover: ensure_deps
 	git clone https://github.com/apollozkp/lambdaworks
-	cd lambdaworks && cargo build --release && mv target/release/libcairo_platinum_prover.so ../
+	cd lambdaworks && . "$$HOME/.cargo/env" && cargo build --release && mv target/release/libcairo_platinum_prover.so ../
 	rm -rf lambdaworks
 
 # TODO: set netuid and subtensor
