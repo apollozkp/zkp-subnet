@@ -127,6 +127,7 @@ class BaseMinerNeuron(BaseNeuron):
                         f"Emission:{self.metagraph.E[my_subnet_uid]}"
                     )
                     bt.logging.info(log)
+                self.sync()
                 step += 1
                 time.sleep(1)
 
