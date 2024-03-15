@@ -20,6 +20,8 @@ import typing
 import base64
 import bittensor as bt
 
+import base
+
 # import base miner class which takes care of most of the boilerplate
 from base.miner import BaseMinerNeuron
 
