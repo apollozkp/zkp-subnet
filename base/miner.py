@@ -23,6 +23,7 @@ import argparse
 import traceback
 
 import bittensor as bt
+from bittensor.errors import NotVerifiedException
 
 from base.neuron import BaseNeuron
 from utils.config import add_miner_args
