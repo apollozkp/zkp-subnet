@@ -114,16 +114,16 @@ class BaseMinerNeuron(BaseNeuron):
         while not self.should_exit:
             try:
                 if step % 10 == 0:
-                    metagraph = subtensor.metagraph(config.netuid)
+                    metagraph = self.subtensor.metagraph(config.netuid)
                     log = (
                         f"Step:{step} | "
-                        f"Block:{metagraph.block.item()} | "
-                        f"Stake:{metagraph.S[my_subnet_uid]} | "
-                        f"Rank:{metagraph.R[my_subnet_uid]} | "
-                        f"Trust:{metagraph.T[my_subnet_uid]} | "
-                        f"Consensus:{metagraph.C[my_subnet_uid] } | "
-                        f"Incentive:{metagraph.I[my_subnet_uid]} | "
-                        f"Emission:{metagraph.E[my_subnet_uid]}"
+                        f"Block:{self.metagraph.block.item()} | "
+                        f"Stake:{self.metagraph.S[my_subnet_uid]} | "
+                        f"Rank:{self.metagraph.R[my_subnet_uid]} | "
+                        f"Trust:{self.metagraph.T[my_subnet_uid]} | "
+                        f"Consensus:{self.metagraph.C[my_subnet_uid] } | "
+                        f"Incentive:{self.metagraph.I[my_subnet_uid]} | "
+                        f"Emission:{self.metagraph.E[my_subnet_uid]}"
                     )
                     bt.logging.info(log)
                 step += 1
