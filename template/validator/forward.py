@@ -67,7 +67,7 @@ async def forward(self):
         self (:obj:`bittensor.neuron.Neuron`): The neuron object which contains all the necessary state for the validator.
 
     """
-    miner_uids = get_random_uids(self, k=min(self.config.neuron.sample_size, self.metagraph.n.item()), exclude = [self.uid])
+    miner_uids = get_random_uids(self, k=min(self.config.neuron.sample_size, self.metagraph.n.item()))
     trace, proof_bytes = generate_random_cairo_trace()
 
     # For completeness, validators also need to generate proofs to ensure that miners are generating
