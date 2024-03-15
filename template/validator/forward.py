@@ -29,9 +29,9 @@ from template.utils.rust import make_trace_and_pub_inputs
 from starkware.cairo.lang.cairo_constants import DEFAULT_PRIME
 from starkware.cairo.lang.compiler.cairo_compile import compile_cairo
 
-def generate_random_cairo_trace():
+def generate_random_cairo_trace(minimum: int=10000, maximum: int=50000):
     # Generate a random cairo program.
-    program = generate_cairo_program()
+    program = generate_cairo_program(minimum, maximum)
     bt.logging.debug("Random cairo program generated.")
 
     # Compile the program.

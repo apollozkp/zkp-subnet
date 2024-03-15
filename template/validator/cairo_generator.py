@@ -43,8 +43,8 @@ def generate_random_operations_on_input(num_operations):
         previous_result_var = current_result_var  # Update for next iteration
     return operations, previous_result_var  # Return all operations and the last result variable
 
-def generate_main_function():
-    num_operations = random.randint(10000, 50000)  # Decide the number of operations randomly
+def generate_main_function(minimum: int, maximum: int):
+    num_operations = random.randint(minimum, maximum)
     operations, last_result_var = generate_random_operations_on_input(num_operations)
 
     operations_code = "\n    ".join(operations)
@@ -56,7 +56,7 @@ func main() {{
 """
     return main_function_template
 
-def generate_cairo_program():
-    program = generate_main_function()
+def generate_cairo_program(minimum: int, maximum: int):
+    program = generate_main_function(minimum, maximum)
     return program
 
