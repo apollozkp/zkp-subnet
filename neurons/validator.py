@@ -34,8 +34,6 @@ from base.validator import BaseValidatorNeuron
 from base.protocol import Trace
 from utils.cairo_generator import generate_random_cairo_trace
 from utils.uids import get_random_uids
-from starkware.cairo.lang.cairo_constants import DEFAULT_PRIME
-from starkware.cairo.lang.compiler.cairo_compile import compile_cairo
 
 
 class Validator(BaseValidatorNeuron):

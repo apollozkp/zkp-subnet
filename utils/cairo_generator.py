@@ -19,6 +19,8 @@ import random
 import bittensor as bt
 from utils.rust import make_proof
 from utils.rust import make_trace_and_pub_inputs
+from starkware.cairo.lang.cairo_constants import DEFAULT_PRIME
+from starkware.cairo.lang.compiler.cairo_compile import compile_cairo
 
 def generate_variable(id=None):
     return f"var_{random.randint(0, 999)}" if id is None else f"var_{id}"
