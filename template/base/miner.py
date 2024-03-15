@@ -111,10 +111,11 @@ class BaseMinerNeuron(BaseNeuron):
 
         # This loop maintains the miner's operations until intentionally stopped.
         step = 0
+        my_subnet_uid = self.metagraph.hotkeys.index(self.wallet.hotkey.ss58_address)
         while not self.should_exit:
             try:
                 if step % 10 == 0:
-                    metagraph = self.subtensor.metagraph(config.netuid)
+                    metagraph = self.subtensor.metagraph(self.config.netuid)
                     log = (
                         f"Step:{step} | "
                         f"Block:{self.metagraph.block.item()} | "
