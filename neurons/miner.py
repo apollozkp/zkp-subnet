@@ -24,6 +24,7 @@ import base
 
 # import base miner class which takes care of most of the boilerplate
 from base.miner import BaseMinerNeuron
+from utils.rust import make_proof
 
 class Miner(BaseMinerNeuron):
     def __init__(self, config=None):
