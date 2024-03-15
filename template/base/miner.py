@@ -110,6 +110,7 @@ class BaseMinerNeuron(BaseNeuron):
         bt.logging.info(f"Miner starting at block: {self.block}")
 
         # This loop maintains the miner's operations until intentionally stopped.
+        step = 0
         while not self.should_exit:
             try:
                 if step % 10 == 0:
