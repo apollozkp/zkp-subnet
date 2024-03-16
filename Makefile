@@ -2,9 +2,11 @@
 
 clean:
 	rm prover
+	rm .ensure-deps
 
 .ensure-deps:
-	sudo apt-get update && sudo apt-get install libgmp-dev # we need gmp for cairo lib
+	sudo apt-get update && sudo apt-get install libgmp-dev nodejs npm # we need gmp for cairo lib and nodejs for pm2
+	npm install -g pm2
 	. "$$HOME/.cargo/env" # source cargo just in case shell was never reloaded
 	@command -v cargo >/dev/null 2>&1 || { \
 		echo >&2 "Rust not installed. Installing..."; \
@@ -33,22 +35,22 @@ python-setup:
 
 # TODO: set netuid and subtensor
 miner: prover python-setup check-env
-	python3 neurons/miner.py --netuid 1 --wallet.name $(WALLET_NAME) --wallet.hotkey $(HOTKEY_NAME) --logging.debug # do this via pm2
+	pm2 neurons/miner.py --interpreter python3 -- --netuid 1 --wallet.name $(WALLET_NAME) --wallet.hotkey $(HOTKEY_NAME) --logging.debug
 
 # TODO: set netuid and subtensor
 validator: prover python-setup check-env
-	python3 neurons/validator.py --netuid 1 --wallet.name $(WALLET_NAME) --wallet.hotkey $(HOTKEY_NAME) --logging.debug # do this via pm2
+	pm2 neurons/validator.py --interpreter python3 -- --netuid 1 --wallet.name $(WALLET_NAME) --wallet.hotkey $(HOTKEY_NAME) --logging.debug
 
 # TODO: set netuid and subtensor
 miner-testnet: prover python-setup check-env
-	python3 neurons/miner.py --netuid 1 --wallet.name $(WALLET_NAME) --wallet.hotkey $(HOTKEY_NAME) --logging.debug # do this via pm2
+	pm2 neurons/miner.py --interpreter python3 -- --netuid 1 --wallet.name $(WALLET_NAME) --wallet.hotkey $(HOTKEY_NAME) --logging.debug
 
 # TODO: set netuid and subtensor
 validator-testnet: prover python-setup check-env
-	python3 neurons/validator.py --netuid 1 --wallet.name $(WALLET_NAME) --wallet.hotkey $(HOTKEY_NAME) --logging.debug # do this via pm2
+	pm2 neurons/validator.py --interpreter python3 -- --netuid 1 --wallet.name $(WALLET_NAME) --wallet.hotkey $(HOTKEY_NAME) --logging.debug
 
 miner-staging: prover python-setup check-env
-	python3 neurons/miner.py --netuid 1 --subtensor.chain_endpoint ws://127.0.0.1:9946 --wallet.name $(WALLET_NAME) --wallet.hotkey $(HOTKEY_NAME) --logging.debug # do this via pm2
+	pm2 neurons/miner.py --interpreter python3 -- --netuid 1 --subtensor.chain_endpoint ws://127.0.0.1:9946 --wallet.name $(WALLET_NAME) --wallet.hotkey $(HOTKEY_NAME) --logging.debug
 
 validator-staging: prover python-setup check-env
-	python3 neurons/validator.py --netuid 1 --subtensor.chain_endpoint ws://127.0.0.1:9946 --wallet.name $(WALLET_NAME) --wallet.hotkey $(HOTKEY_NAME) --logging.debug # do this via pm2
+	pm2 neurons/validator.py --interpreter python3 -- --netuid 1 --subtensor.chain_endpoint ws://127.0.0.1:9946 --wallet.name $(WALLET_NAME) --wallet.hotkey $(HOTKEY_NAME) --logging.debug
