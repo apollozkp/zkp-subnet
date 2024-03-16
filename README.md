@@ -59,10 +59,7 @@ TODO: get network uids so that we can instruct users on how to deploy
 
 Then, ensure you have the subnet code on your machine.
 
-> NOTE: THE CODE ALWAYS ASSUMES THAT THE REPOSITORY IS CLONED IN THE `/root` DIRECTORY. FAILURE TO DO SO WILL CAUSE BREAKAGE OF THE MINER AND VALIDATOR NEURONS.
-
 ```bash
-cd /root
 git clone https://github.com/apollozkp/zkp-subnet.git
 cd zkp-subnet
 ```
@@ -82,6 +79,14 @@ make validator WALLET_NAME=<your_wallet_name> HOTKEY_NAME=<your_hotkey_name>
 ```
 
 where `<your_wallet_name>` is the name of your wallet, and `<your_hotkey_name>` is the name of your hotkey.
+
+The command starts a `pm2` process which ensures that the miner or validator will continue running, even if you log out of your server session. To check the logs, simply type:
+
+```bash
+pm2 logs
+```
+
+to get a look at what's happening.
 
 ### Validators only
 
