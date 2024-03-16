@@ -2,7 +2,6 @@
 
 clean:
 	rm prover
-	rm .ensure-deps
 
 .ensure-deps:
 	sudo apt-get update && sudo apt-get install libgmp-dev nodejs npm # we need gmp for cairo lib and nodejs for pm2
