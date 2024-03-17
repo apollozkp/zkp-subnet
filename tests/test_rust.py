@@ -17,10 +17,11 @@
 
 LAMBDAWORKS_URL = "https://github.com/apollozkp/lambdaworks"
 
-import ctypes
 import pytest
 import subprocess
 import os
+from utils.cairo_generator import generate_cairo_program
+from utils.rust import make_trace_and_pub_inputs, make_proof
 
 @pytest.fixture(scope="session", autouse=True)
 def compile_prover_lib():
@@ -30,6 +31,7 @@ def compile_prover_lib():
     subprocess.check_call("cargo build --release", shell=True)
 
     compiled_path = os.path.join("lambdaworks", "target/release/libcairo_platinum_prover.so")
+    os.chdir("..")
     yield compiled_path
 
 @pytest.fixture(scope="sesssion", autouse=True)
