@@ -31,7 +31,6 @@ from base.protocol import Trace
 from utils.cairo_generator import generate_random_cairo_trace
 from utils.uids import get_random_uids
 
-
 class Validator(BaseValidatorNeuron):
     def __init__(self, config=None):
         super(Validator, self).__init__(config=config)

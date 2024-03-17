@@ -15,18 +15,30 @@
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
+LAMBDAWORKS_URL = "https://github.com/apollozkp/lambdaworks"
+
 import pytest
-from utils.cairo_generator import generate_cairo_program
-from utils.rust import make_trace_and_pub_inputs, make_proof
+import subprocess
+import os
 
-@pytest.mark.parametrize("n", [10, 100, 1000])
-def test_rust_functionality(compile_prover_lib, n):
-    compiled_path = compile_prover_lib
-    
-    program = generate_cairo_program(n, n)
-    trace, pub_inputs = make_trace_and_pub_inputs(program, compiled_path)
-    assert trace
-    assert pub_inputs
+@pytest.fixture(scope="session", autouse=True)
+def compile_prover_lib():
+    if os.path.exists("lambdaworks"):
+        subprocess.check_call("rm -rf lambdaworks", shell=True)
 
-    proof = make_proof(trace, pub_inputs, compiled_path)
-    assert proof
+    subprocess.check_call(f"git clone {LAMBDAWORKS_URL}", shell=True)
+
+    os.chdir("lambdaworks")
+    subprocess.check_call("cargo build --release", shell=True)
+
+    compiled_path = os.path.join("lambdaworks", "target/release/libcairo_platinum_prover.so")
+    os.chdir("..")
+    yield compiled_path
+
+@pytest.fixture(scope="session", autouse=True)
+def cleanup_env(request):
+    def cleanup():
+        if os.path.exists("lambdaworks"):
+            subprocess.check_call("rm -rf lambdaworks", shell=True)
+
+    request.addfinalizer(cleanup)

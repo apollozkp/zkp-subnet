@@ -16,12 +16,7 @@
 # DEALINGS IN THE SOFTWARE.
 
 import ctypes
-from os import path
 from typing import Tuple
-
-here = path.abspath(path.dirname(__file__))
-head_tail = path.split(here)
-LIB_PATH = path.join(head_tail[0], "prover")
 
 class ByteData(ctypes.Structure):
     _fields_ = [("data", ctypes.POINTER(ctypes.c_ubyte)),
@@ -31,7 +26,7 @@ class DoubleByteData(ctypes.Structure):
     _fields_ = [("first", ByteData),
                 ("second", ByteData)]
 
-def make_proof(main_trace: bytes, pub_inputs: bytes, lib_path: str=LIB_PATH) -> bytes:
+def make_proof(main_trace: bytes, pub_inputs: bytes, lib_path: str) -> bytes:
     prover = ctypes.CDLL(lib_path)
     prover.generate_proof_from_trace.argtypes = [ctypes.POINTER(ctypes.c_ubyte), ctypes.c_size_t,ctypes.POINTER(ctypes.c_ubyte), ctypes.c_size_t]
     prover.generate_proof_from_trace.restype = ctypes.POINTER(ByteData)
@@ -49,7 +44,7 @@ def make_proof(main_trace: bytes, pub_inputs: bytes, lib_path: str=LIB_PATH) -> 
 
     return proof_bytes
 
-def make_trace_and_pub_inputs(program: str, lib_path: str=LIB_PATH) -> Tuple[bytes, bytes]:
+def make_trace_and_pub_inputs(program: str, lib_path: str) -> Tuple[bytes, bytes]:
     # Compile Cairo program and retrieve execution trace and public inputs.
     prover = ctypes.CDLL(lib_path)
     prover.generate_trace_and_inputs.argtypes = [ctypes.POINTER(ctypes.c_ubyte), ctypes.c_size_t]

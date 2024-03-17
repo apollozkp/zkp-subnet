@@ -17,6 +17,7 @@
 
 import base64
 import json
+from os import path
 import random
 import bittensor as bt
 from base.protocol import Trace
@@ -24,6 +25,10 @@ from utils.rust import make_proof
 from utils.rust import make_trace_and_pub_inputs
 from starkware.cairo.lang.cairo_constants import DEFAULT_PRIME
 from starkware.cairo.lang.compiler.cairo_compile import compile_cairo
+
+here = path.abspath(path.dirname(__file__))
+head_tail = path.split(here)
+LIB_PATH = path.join(head_tail[0], "prover")
 
 def generate_variable(id=None):
     return f"var_{random.randint(0, 999)}" if id is None else f"var_{id}"
@@ -80,15 +85,15 @@ def generate_cairo_program(minimum: int, maximum: int):
 
     return program
 
-def generate_random_cairo_trace(minimum: int=10000, maximum: int=50000):
+def generate_random_cairo_trace(minimum: int=10000, maximum: int=50000, lib_path: str=LIB_PATH):
     # Generate a random cairo program.
     program = generate_cairo_program(minimum, maximum)
 
     # Generate trace and public inputs.
-    main_trace, pub_inputs = make_trace_and_pub_inputs(program)
+    main_trace, pub_inputs = make_trace_and_pub_inputs(program, lib_path)
     bt.logging.debug("Trace and inputs created for random cairo program.")
 
-    proof_bytes = make_proof(main_trace, pub_inputs)
+    proof_bytes = make_proof(main_trace, pub_inputs, lib_path)
     bt.logging.debug("Proof created for random cairo program.")
 
     main_trace = base64.b64encode(main_trace)

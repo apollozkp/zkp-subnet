@@ -26,6 +26,8 @@ import base
 from base.miner import BaseMinerNeuron
 from utils.rust import make_proof
 
+from utils.cairo_generator import LIB_PATH
+
 class Miner(BaseMinerNeuron):
     def __init__(self, config=None):
         super(Miner, self).__init__(config=config)
@@ -33,46 +35,39 @@ class Miner(BaseMinerNeuron):
     async def forward(
         self, synapse: base.protocol.Trace
     ) -> base.protocol.Trace:
-        # Decode the strings to bytes for Rust.
-        main_trace = base64.b64decode(synapse.main_trace)
-        pub_inputs = base64.b64decode(synapse.pub_inputs)
-
-        # Generate the actual proof.
-        proof = make_proof(main_trace, pub_inputs)
-
-        # And re-encode back to base64 strings; because Python apparently doesn't know that JSON
-        # can just take byte arrays, and so we have to coddle it :)
-        proof = base64.b64encode(proof)
-
-        synapse.proof = proof
-        return synapse
+        return forward(synapse)
 
     async def blacklist(
         self, synapse: base.protocol.Trace
     ) -> typing.Tuple[bool, str]:
-        uid = self.metagraph.hotkeys.index(synapse.dendrite.hotkey)
-        if (
-            not self.config.blacklist.allow_non_registered
-            and synapse.dendrite.hotkey not in self.metagraph.hotkeys
-        ):
-            # Ignore requests from un-registered entities.
-            bt.logging.trace(
-                f"Blacklisting un-registered hotkey {synapse.dendrite.hotkey}"
-            )
-            return True, "Unrecognized hotkey"
+        try:
+            uid = self.metagraph.hotkeys.index(synapse.dendrite.hotkey)
+            if self.config.blacklist.force_validator_permit:
+                # If the config is set to force validator permit, then we should only allow requests from validators.
+                if not self.metagraph.validator_permit[uid]:
+                    bt.logging.warning(
+                        f"Blacklisting a request from non-validator hotkey {synapse.dendrite.hotkey}"
+                    )
+                    return True, "Non-validator hotkey"
 
-        if self.config.blacklist.force_validator_permit:
-            # If the config is set to force validator permit, then we should only allow requests from validators.
-            if not self.metagraph.validator_permit[uid]:
+            bt.logging.trace(
+                f"Not Blacklisting recognized hotkey {synapse.dendrite.hotkey}"
+            )
+            return False, "Hotkey recognized!"
+        except:
+            if self.config.blacklist.allow_non_registered:
+                if self.config.blacklist.force_validator_permit:
+                    bt.logging.warning(
+                        f"Blacklisting a request from non-validator hotkey {synapse.dendrite.hotkey}"
+                    )
+                    return True, "Unrecognized hotkey"
+
+                return False, "Allowing unregistered hotkey"
+            else:
                 bt.logging.warning(
                     f"Blacklisting a request from non-validator hotkey {synapse.dendrite.hotkey}"
                 )
-                return True, "Non-validator hotkey"
-
-        bt.logging.trace(
-            f"Not Blacklisting recognized hotkey {synapse.dendrite.hotkey}"
-        )
-        return False, "Hotkey recognized!"
+                return True, "Unrecognized hotkey"
 
     async def priority(self, synapse: base.protocol.Trace) -> float:
         caller_uid = self.metagraph.hotkeys.index(
@@ -86,6 +81,20 @@ class Miner(BaseMinerNeuron):
         )
         return priority
 
+def forward(synapse: base.protocol.Trace, lib_path: str=LIB_PATH) -> base.protocol.Trace:
+    # Decode the strings to bytes for Rust.
+    main_trace = base64.b64decode(synapse.main_trace)
+    pub_inputs = base64.b64decode(synapse.pub_inputs)
+
+    # Generate the actual proof.
+    proof = make_proof(main_trace, pub_inputs, lib_path)
+
+    # And re-encode back to base64 strings; because Python apparently doesn't know that JSON
+    # can just take byte arrays, and so we have to coddle it :)
+    proof = base64.b64encode(proof)
+
+    synapse.proof = proof
+    return synapse
 
 # This is the main function, which runs the miner.
 if __name__ == "__main__":
