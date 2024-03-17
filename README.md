@@ -3,6 +3,7 @@
 # **Apollo Collaborative Zero-knowledge Proof Generation Subnet**
 [![Discord Chat](https://img.shields.io/discord/308323056592486420.svg)](https://discord.gg/bittensor)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) 
+[![Coverage Status](https://coveralls.io/repos/github/apollozkp/zkp-subnet/badge.svg?branch=main)](https://coveralls.io/github/apollozkp/zkp-subnet?branch=main)
 
 [Website](https://apollozkp.com)
 
