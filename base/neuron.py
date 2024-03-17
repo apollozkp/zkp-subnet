@@ -26,6 +26,7 @@ from abc import ABC, abstractmethod
 from utils.config import check_config, add_args, config
 from utils.misc import ttl_get_block
 from base import __spec_version__ as spec_version
+from base.mock import MockSubtensor, MockMetagraph
 
 
 class BaseNeuron(ABC):
@@ -77,9 +78,18 @@ class BaseNeuron(ABC):
         # These are core Bittensor classes to interact with the network.
         bt.logging.info("Setting up bittensor objects.")
 
-        self.wallet = bt.wallet(config=self.config)
-        self.subtensor = bt.subtensor(config=self.config)
-        self.metagraph = self.subtensor.metagraph(self.config.netuid)
+        if self.config.mock:
+            self.wallet = bt.MockWallet(config=self.config)
+            self.subtensor = MockSubtensor(
+                netuid=1, wallet=self.wallet
+            )
+            self.metagraph = MockMetagraph(
+                netuid=1, subtensor=self.subtensor
+            )
+        else:
+            self.wallet = bt.wallet(config=self.config)
+            self.subtensor = bt.subtensor(config=self.config)
+            self.metagraph = self.subtensor.metagraph(self.config.netuid)
 
         bt.logging.info(f"Wallet: {self.wallet}")
         bt.logging.info(f"Subtensor: {self.subtensor}")
