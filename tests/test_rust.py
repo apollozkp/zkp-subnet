@@ -25,6 +25,9 @@ from utils.rust import make_trace_and_pub_inputs, make_proof
 
 @pytest.fixture(scope="session", autouse=True)
 def compile_prover_lib():
+    if os.path.exists("lambdaworks"):
+        subprocess.check_call("rm -rf lambdaworks", shell=True)
+
     subprocess.check_call(f"git clone {LAMBDAWORKS_URL}", shell=True)
 
     os.chdir("lambdaworks")
@@ -34,7 +37,7 @@ def compile_prover_lib():
     os.chdir("..")
     yield compiled_path
 
-@pytest.fixture(scope="sesssion", autouse=True)
+@pytest.fixture(scope="session", autouse=True)
 def cleanup_env(request):
     def cleanup():
         if os.path.exists("lambdaworks"):
@@ -42,8 +45,8 @@ def cleanup_env(request):
 
     request.addfinalizer(cleanup)
 
-@pytest.mark.parameterize("n", [10, 100, 1000])
-def test_rust_functionality(compile_prover_lib):
+@pytest.mark.parametrize("n", [10, 100, 1000])
+def test_rust_functionality(compile_prover_lib, n):
     compiled_path = compile_prover_lib
     
     program = generate_cairo_program(n, n)

@@ -49,11 +49,11 @@ def generate_random_operations_on_input(num_operations):
             next_var = generate_number() if random.choice([True, False]) else previous_result_var
             operations.append(generate_arithmetic_operation(previous_result_var, str(next_var), current_result_var))
         previous_result_var = current_result_var  # Update for next iteration
-    return operations, previous_result_var  # Return all operations and the last result variable
+    return operations
 
 def generate_main_function(minimum: int, maximum: int):
     num_operations = random.randint(minimum, maximum)
-    operations, last_result_var = generate_random_operations_on_input(num_operations)
+    operations = generate_random_operations_on_input(num_operations)
 
     operations_code = "\n    ".join(operations)
     main_function_template = f"""
@@ -66,11 +66,6 @@ func main() {{
 
 def generate_cairo_program(minimum: int, maximum: int):
     program = generate_main_function(minimum, maximum)
-    return program
-
-def generate_random_cairo_trace(minimum: int=10000, maximum: int=50000):
-    # Generate a random cairo program.
-    program = generate_cairo_program(minimum, maximum)
     bt.logging.debug("Random cairo program generated.")
 
     # Compile the program.
@@ -82,6 +77,12 @@ def generate_random_cairo_trace(minimum: int=10000, maximum: int=50000):
     del program["compiler_version"]
     del program["main_scope"]
     program = json.dumps(program)
+
+    return program
+
+def generate_random_cairo_trace(minimum: int=10000, maximum: int=50000):
+    # Generate a random cairo program.
+    program = generate_cairo_program(minimum, maximum)
 
     # Generate trace and public inputs.
     main_trace, pub_inputs = make_trace_and_pub_inputs(program)
