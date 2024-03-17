@@ -81,10 +81,10 @@ class BaseNeuron(ABC):
         if self.config.mock:
             self.wallet = bt.MockWallet(config=self.config)
             self.subtensor = MockSubtensor(
-                netuid=1, wallet=self.wallet
+                netuid=self.config.netuid, wallet=self.wallet
             )
             self.metagraph = MockMetagraph(
-                netuid=1, subtensor=self.subtensor
+                netuid=self.config.netuid, subtensor=self.subtensor
             )
         else:
             self.wallet = bt.wallet(config=self.config)

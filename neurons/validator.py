@@ -38,34 +38,12 @@ class Validator(BaseValidatorNeuron):
         self.load_state()
 
     async def forward(self):
-        miner_uids = get_random_uids(self, k=min(self.config.neuron.sample_size, self.metagraph.n.item()))
-        trace, proof_bytes = generate_random_cairo_trace()
-
         # For completeness, validators also need to generate proofs to ensure that miners are generating
         # proofs of the given trace, rather than just creating any random garbage proof that will pass
         # verification.
+        trace, proof_bytes = generate_random_cairo_trace()
 
-        responses = await self.dendrite(
-            axons=[self.metagraph.axons[uid] for uid in miner_uids],
-            synapse=trace, # send in the execution trace
-            deserialize=False, # bogus responses shouldn't kill the validation flow
-            timeout=10,
-        )
-
-        def try_deserialize(item: Trace):
-            try:
-                return item.deserialize()
-            except:
-                return bytes()
-
-        responses = [try_deserialize(item) for item in responses]
-
-        # Log the results for monitoring purposes. We don't log the actual response since
-        # proofs are enormous and it would pollute the logs.
-        bt.logging.info(f"Received responses.")
-
-        # Adjust the scores based on responses from miners.
-        rewards = self.get_rewards(proof_bytes, responses)
+        rewards = await query(self, trace, proof_bytes)
 
         bt.logging.info(f"Scored responses: {rewards}")
         # Update the scores based on the rewards. You may want to define your own update_scores function for custom behavior.
@@ -80,6 +58,30 @@ class Validator(BaseValidatorNeuron):
             [reward(proof_bytes, response_proof) for response_proof in responses]
         ).to(self.device)
 
+async def query(self, trace: Trace, proof_bytes: bytes) -> torch.FloatTensor:
+    miner_uids = get_random_uids(self, k=min(self.config.neuron.sample_size, self.metagraph.n.item()))
+    responses = await self.dendrite(
+        axons=[self.metagraph.axons[uid] for uid in miner_uids],
+        synapse=trace, # send in the execution trace
+        deserialize=False, # bogus responses shouldn't kill the validation flow
+        timeout=10,
+    )
+
+    def try_deserialize(item: Trace):
+        try:
+            return item.deserialize()
+        except:
+            return bytes()
+
+    responses = [try_deserialize(item) for item in responses]
+
+    # Log the results for monitoring purposes. We don't log the actual response since
+    # proofs are enormous and it would pollute the logs.
+    bt.logging.info(f"Received responses.")
+
+    # Adjust the scores based on responses from miners.
+    return self.get_rewards(proof_bytes, responses)
+
 # it's sufficient for us to check exact matches between proof bytes and pub inputs bytes.
 # verifying the proof would be redundant at this stage, but a later update would likely make
 # it more sensible to opt for proof verification instead of byte matching
@@ -88,7 +90,6 @@ def reward(proof_bytes: bytes, response_proof: bytes) -> float:
         return 0.0
 
     return 1.0
-
 
 # The main function parses the configuration and runs the validator.
 if __name__ == "__main__":

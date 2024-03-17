@@ -28,10 +28,13 @@ from bittensor.mock.wallet_mock import get_mock_wallet
 def setup_miner():
     config = BaseNeuron.config()
     config.mock = True
+    config.netuid = 1
     config.wallet.name = "minermock"
     config.wallet.hotkey = "minermockhotkey"
+    config.neuron.dont_save_events = True
     miner = Miner(config)
     yield miner
+    miner.subtensor.reset()
     miner.stop_run_thread()
 
 @pytest.mark.parametrize("n", [10, 100, 1000])

@@ -18,6 +18,7 @@
 import time
 
 import asyncio
+import base64
 import random
 import bittensor as bt
 
@@ -46,7 +47,7 @@ class MockSubtensor(bt.MockSubtensor):
             self.force_register_neuron(
                 netuid=netuid,
                 hotkey=f"miner-hotkey-{i}",
-                coldkey="mock-coldkey",
+                coldkey=f"mock-coldkey-{i}",
                 balance=100000,
                 stake=100000,
             )
@@ -66,3 +67,53 @@ class MockMetagraph(bt.metagraph):
 
         bt.logging.info(f"Metagraph: {self}")
         bt.logging.info(f"Axons: {self.axons}")
+
+class MockDendrite(bt.dendrite):
+    def __init__(self, wallet):
+        super().__init__(wallet)
+
+    async def forward(
+        self,
+        axons: List[bt.axon],
+        synapse: bt.Synapse = bt.Synapse(),
+        timeout: float = 12,
+        deserialize: bool = True,
+        run_async: bool = True,
+        streaming: bool = False,
+    ):
+        if streaming:
+            raise NotImplementedError("Streaming not implemented yet.")
+
+        async def query_all_axons(streaming: bool):
+            async def single_axon_response(i, axon):
+                start_time = time.time()
+                s = synapse.copy()
+                s = self.preprocess_synapse_for_request(axon, s, timeout)
+                process_time = random.random()
+                if process_time < timeout:
+                    s.dendrite.process_time = str(time.time() - start_time)
+                    s.proof = base64.b64encode(bytes("abc", "utf-8"))
+                    s.dendrite.status_code = 200
+                    s.dendrite.status_message = "OK"
+                    synapse.dendrite.process_time = str(process_time)
+                else:
+                    s.dendrite.status_code = 408
+                    s.dendrite.status_message = "Timeout"
+                    synapse.dendrite.process_time = str(timeout)
+
+                if deserialize:
+                    return s.deserialize()
+                else:
+                    return s
+
+            return await asyncio.gather(
+                *(
+                    single_axon_response(i, target_axon)
+                    for i, target_axon in enumerate(axons)
+                )
+            )
+
+        return await query_all_axons(streaming)
+
+    def __str__(self) -> str:
+        return "MockDendrite({})".format(self.keypair.ss58_address)
