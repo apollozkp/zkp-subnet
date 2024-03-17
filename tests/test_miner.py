@@ -32,6 +32,7 @@ def setup_miner():
     config.wallet.hotkey = "minermockhotkey"
     miner = Miner(config)
     yield miner
+    miner.stop_run_thread()
 
 @pytest.mark.parametrize("n", [10, 100, 1000])
 def test_miner_forward(compile_prover_lib, n):
