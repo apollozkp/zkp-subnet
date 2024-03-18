@@ -56,8 +56,6 @@ btcli wallet new_hotkey --wallet.name <your_wallet_name> --wallet.hotkey <your_h
 
 Be sure to replace `<your_wallet_name>` and `<your_hotkey_name>` with names of your choosing.
 
-TODO: get network uids so that we can instruct users on how to deploy
-
 Then, ensure you have the subnet code on your machine.
 
 ```bash
