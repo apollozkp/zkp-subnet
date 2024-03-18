@@ -15,8 +15,8 @@ Bittensor subnets are a great way to provide open APIs aimed at outsourcing cert
 
 ## Roadmap
 
-- [ ] Deploy v0 on Bittensor testnet | In progress...
-- [ ] Deploy v0 on Bittensor mainnet
+- [x] Deploy v0 on Bittensor testnet
+- [ ] Deploy v0 on Bittensor mainnet | In progress...
 - [ ] Implement and deploy vanilla-PLONK style constraint aggregation
 - [ ] Build payment infrastructure to fully open a public API for proof generation with payouts to miners and validators
 - [ ] Extend constraint aggregation support to any type of circuit (KZG only)
