@@ -42,12 +42,7 @@ class Validator(BaseValidatorNeuron):
         # proofs of the given trace, rather than just creating any random garbage proof that will pass
         # verification.
         trace, proof_bytes = generate_random_cairo_trace()
-
-        rewards = await query(self, trace, proof_bytes)
-
-        bt.logging.info(f"Scored responses: {rewards}")
-        # Update the scores based on the rewards. You may want to define your own update_scores function for custom behavior.
-        self.update_scores(rewards, miner_uids)
+        await query(self, trace, proof_bytes)
 
     def get_rewards(
         self,
@@ -80,7 +75,11 @@ async def query(self, trace: Trace, proof_bytes: bytes) -> torch.FloatTensor:
     bt.logging.info(f"Received responses.")
 
     # Adjust the scores based on responses from miners.
-    return self.get_rewards(proof_bytes, responses)
+    rewards = self.get_rewards(proof_bytes, responses)
+    bt.logging.info(f"Scored responses: {rewards}")
+
+    # Update the scores based on the rewards. You may want to define your own update_scores function for custom behavior.
+    self.update_scores(rewards, miner_uids)
 
 # it's sufficient for us to check exact matches between proof bytes and pub inputs bytes.
 # verifying the proof would be redundant at this stage, but a later update would likely make

@@ -26,6 +26,7 @@ def setup_validator():
     config.netuid = 10
     config.neuron.sample_size = 50
     config.neuron.dont_save_events = True
+    config.neuron.device = "cpu"
     config.wallet.name = "valimock"
     config.wallet.hotkey = "valimockhotkey"
     validator = Validator(config)
@@ -48,7 +49,7 @@ async def test_validator_forward(compile_prover_lib, setup_validator):
     bogus_trace = Trace(main_trace="hello", pub_inputs="world")
     response = bytes("abc", "utf-8")
 
-    rewards = await query(validator, bogus_trace, response)
+    await query(validator, bogus_trace, response)
 
-    for reward in rewards:
-        assert reward == 1.0 or reward == 0.0
+    for score in validator.scores:
+        assert score > 0.0
