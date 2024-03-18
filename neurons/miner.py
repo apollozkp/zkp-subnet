@@ -58,14 +58,14 @@ class Miner(BaseMinerNeuron):
             if self.config.blacklist.allow_non_registered:
                 if self.config.blacklist.force_validator_permit:
                     bt.logging.warning(
-                        f"Blacklisting a request from non-validator hotkey {synapse.dendrite.hotkey}"
+                        f"Blacklisting a request from unregistered non-validator hotkey {synapse.dendrite.hotkey}"
                     )
                     return True, "Unrecognized hotkey"
 
                 return False, "Allowing unregistered hotkey"
             else:
                 bt.logging.warning(
-                    f"Blacklisting a request from non-validator hotkey {synapse.dendrite.hotkey}"
+                    f"Blacklisting a request from unregistered hotkey {synapse.dendrite.hotkey}"
                 )
                 return True, "Unrecognized hotkey"
 
