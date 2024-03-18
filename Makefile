@@ -40,13 +40,11 @@ miner: prover python-setup check-env
 validator: prover python-setup check-env
 	pm2 start neurons/validator.py --interpreter python3 -- --netuid 1 --wallet.name $(WALLET_NAME) --wallet.hotkey $(HOTKEY_NAME) --logging.debug
 
-# TODO: set netuid and subtensor
 miner-testnet: prover python-setup check-env
-	pm2 start neurons/miner.py --interpreter python3 -- --netuid 1 --wallet.name $(WALLET_NAME) --wallet.hotkey $(HOTKEY_NAME) --logging.debug
+	pm2 start neurons/miner.py --interpreter python3 -- --netuid 115 --subtensor.network test --wallet.name $(WALLET_NAME) --wallet.hotkey $(HOTKEY_NAME) --logging.debug
 
-# TODO: set netuid and subtensor
 validator-testnet: prover python-setup check-env
-	pm2 start neurons/validator.py --interpreter python3 -- --netuid 1 --wallet.name $(WALLET_NAME) --wallet.hotkey $(HOTKEY_NAME) --logging.debug
+	pm2 start neurons/validator.py --interpreter python3 -- --netuid 115 --subtensor.network test --wallet.name $(WALLET_NAME) --wallet.hotkey $(HOTKEY_NAME) --logging.debug
 
 miner-staging: prover python-setup check-env
 	pm2 start neurons/miner.py --interpreter python3 -- --netuid 1 --subtensor.chain_endpoint ws://127.0.0.1:9946 --wallet.name $(WALLET_NAME) --wallet.hotkey $(HOTKEY_NAME) --logging.debug
