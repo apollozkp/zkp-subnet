@@ -115,19 +115,22 @@ btcli wallet overview --wallet.name miner --subtensor.chain_endpoint ws://127.0.
 
 cd ..
 
+# start the miner and validator in sequence
+make miner-staging WALLET_NAME=miner HOTKEY_NAME=default 
+make validator-staging WALLET_NAME=miner HOTKEY_NAME=default 
 
 # Check if inside a tmux session
 if [ -z "$TMUX" ]; then
-    # Start a new tmux session and run the miner in the first pane
-    tmux new-session -d -s bittensor -n 'miner' 'make miner-staging WALLET_NAME=miner HOTKEY_NAME=default && pm2 logs miner'
+    # Start a new tmux session and tail the miner in the first pane
+    tmux new-session -d -s bittensor -n 'miner' 'pm2 logs miner'
     
-    # Split the window and run the validator in the new pane
-    tmux split-window -h -t bittensor:miner 'make validator-staging WALLET_NAME=miner HOTKEY_NAME=default && pm2 logs validator'
+    # Split the window and tail the validator in the new pane
+    tmux split-window -h -t bittensor:miner 'pm2 logs validator'
     
     # Attach to the new tmux session
     tmux attach-session -t bittensor
 else
     # If already in a tmux session, create two panes in the current window
-    tmux split-window -h 'make miner-staging WALLET_NAME=miner HOTKEY_NAME=default && pm2 logs miner'
-    tmux split-window -v -t 0 'make validator-staging WALLET_NAME=miner HOTKEY_NAME=default && pm2 logs validator'
+    tmux split-window -h 'pm2 logs miner'
+    tmux split-window -v -t 0 'pm2 logs validator'
 fi
