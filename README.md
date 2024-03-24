@@ -31,12 +31,14 @@ For this version 0, it is advised that validators run slightly stronger hardware
 
 ### Validator requirements
 
+- Ubuntu 22.04
 - At least 8 vCPUs
 - At least 16 GB RAM (DDR4 or higher)
 - 200 GB storage
 
 ### Miner requirements
 
+- Ubuntu 22.04
 - At least 4 vCPUs
 - At least 16 GB RAM (DDR4 or higher)
 - 200 GB storage
