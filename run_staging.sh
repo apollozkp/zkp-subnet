@@ -106,7 +106,7 @@ btcli subnet register --wallet.name miner --netuid 1 --wallet.hotkey default --s
 btcli subnet register --wallet.name validator --netuid 1 --wallet.hotkey default --subtensor.chain_endpoint ws://127.0.0.1:9946 --no_prompt
 
 # Add stake to the validator
-btcli stake add --wallet.name validator --wallet.hotkey default --subtensor.chain_endpoint ws://127.0.0.1:9946 --amount 10000 --no_prompt
+btcli stake add --wallet.name validator --wallet.hotkey default --subtensor.chain_endpoint ws://127.0.0.1:9946 --amount 9900 --no_prompt
 
 # Ensure both the miner and validator keys are successfully registered.
 btcli subnet list --subtensor.chain_endpoint ws://127.0.0.1:9946
