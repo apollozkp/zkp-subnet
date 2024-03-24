@@ -116,15 +116,15 @@ cd ..
 # Check if inside a tmux session
 if [ -z "$TMUX" ]; then
     # Start a new tmux session and run the miner in the first pane
-    tmux new-session -d -s bittensor -n 'miner' 'make miner-staging WALLET_NAME=miner HOTKEY_NAME=default'
+    tmux new-session -d -s bittensor -n 'miner' 'make miner-staging WALLET_NAME=miner HOTKEY_NAME=default && pm2 logs miner'
     
     # Split the window and run the validator in the new pane
-    tmux split-window -h -t bittensor:miner 'make validator-staging WALLET_NAME=miner HOTKEY_NAME=default'
+    tmux split-window -h -t bittensor:miner 'make validator-staging WALLET_NAME=miner HOTKEY_NAME=default && pm2 logs validator'
     
     # Attach to the new tmux session
     tmux attach-session -t bittensor
 else
     # If already in a tmux session, create two panes in the current window
-    tmux split-window -h 'make miner-staging WALLET_NAME=miner HOTKEY_NAME=default'
-    tmux split-window -v -t 0 'make validator-staging WALLET_NAME=miner HOTKEY_NAME=default'
+    tmux split-window -h 'make miner-staging WALLET_NAME=miner HOTKEY_NAME=default && pm2 logs miner'
+    tmux split-window -v -t 0 'make validator-staging WALLET_NAME=miner HOTKEY_NAME=default && pm2 logs validator'
 fi
