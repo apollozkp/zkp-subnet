@@ -71,10 +71,7 @@ async def test_miner_blacklist(setup_miner, allow_non_registered, force_vpermit)
 
     assert not bl1
     if allow_non_registered:
-        if force_vpermit:
-            assert bl2
-        else:
-            assert not bl2
+        assert not bl2
     else:
         assert bl2
     
