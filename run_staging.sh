@@ -117,7 +117,7 @@ cd ..
 
 # start the miner and validator in sequence
 make miner-staging WALLET_NAME=miner HOTKEY_NAME=default 
-make validator-staging WALLET_NAME=miner HOTKEY_NAME=default 
+make validator-staging WALLET_NAME=validator HOTKEY_NAME=default 
 
 # Check if inside a tmux session
 if [ -z "$TMUX" ]; then
