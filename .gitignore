@@ -1,3 +1,7 @@
+# bash scripts
+.dependencies_installed
+.wallets_setup
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
