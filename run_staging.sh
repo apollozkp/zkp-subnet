@@ -84,6 +84,9 @@ chmod +x setup_and_run.sh
 tmux new-session -d -s localnet -n 'localnet'
 tmux send-keys -t localnet 'bash ../subtensor/setup_and_run.sh' C-m
 
+# Give some time for the subtensor to start
+sleep 10
+
 # Notify the user
 echo ">> localnet.sh is running in a detached tmux session named 'localnet'"
 echo ">> You can attach to this session with: tmux attach-session -t localnet"
