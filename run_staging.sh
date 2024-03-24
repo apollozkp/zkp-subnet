@@ -8,7 +8,7 @@ install_dependencies() {
         echo "Updating system packages..."
         sudo apt update
         echo "Installing required packages..."
-        sudo apt install --assume-yes make build-essential git clang curl libssl-dev llvm libudev-dev protobuf-compiler tmux
+        sudo apt install --assume-yes make build-essential git clang curl libssl-dev llvm libudev-dev protobuf-compiler tmux libgmp-dev
     }
 
     # Detect OS and call the appropriate function
