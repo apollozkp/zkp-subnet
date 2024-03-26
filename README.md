@@ -27,7 +27,7 @@ Bittensor subnets are a great way to provide open APIs aimed at outsourcing cert
 
 ## Hardware requirements
 
-For this version 0, it is advised that validators run slightly stronger hardware than miners do. This is needed due to the computational cost of converting Cairo programs to a set of constraints which a miner can then prove to signal his capability.
+For this version 0, it is advised that validators run slightly stronger hardware than miners do. This is needed due to the computational cost of converting Cairo programs to a set of constraints which a miner can then prove to signal his capability. Over time, as we move over to KZG based random circuits and proof generation, this requirement will drop for the validator and the miners will be able to compete more effectively.
 
 ### Validator requirements
 
@@ -89,6 +89,22 @@ pm2 logs
 ```
 
 to get a look at what's happening.
+
+### Updating the miner/validator
+
+If a new update has been released, you may update your miner or validator by running
+
+```bash
+pm2 stop <miner/validator>
+```
+
+choosing `miner` or `validator` depending on what you're running. Then, you can use
+
+```bash
+git pull
+```
+
+to update the codebase. Finally, you can run the same `make` command as you did before to restart your miner or validator, and use `pm2 logs` to observe the output.
 
 ### Validators only
 
