@@ -34,12 +34,14 @@ def setup_validator():
     validator.subtensor.reset()
     validator.stop_run_thread()
 
-@pytest.mark.parametrize("proof_bytes,response_proof,expected_value", [
-    (bytes("hi", "utf-8"), bytes("hi", "utf-8"), 1.0),
-    (bytes("hi", "utf-8"), bytes("hello", "utf-8"), 0.0),
+@pytest.mark.parametrize("proof_bytes,response_proof,response_process_time,min_process_time,timeout,expected_value", [
+    (bytes("hi", "utf-8"), bytes("hi", "utf-8"), 2.6, 2.6, 10.0, 1.0),
+    (bytes("hi", "utf-8"), bytes("hello", "utf-8"), 2.6, 2.6, 10.0, 0.0),
+    (bytes("hi", "utf-8"), bytes("hi", "utf-8"), 11.6, 2.6, 10.0, 0.0),
+    (bytes("hi", "utf-8"), bytes("hi", "utf-8"), 7.5, 5.0, 10.0, 0.5),
 ])
-def test_reward(proof_bytes, response_proof, expected_value):
-    assert reward(proof_bytes, response_proof) == expected_value
+def test_reward(proof_bytes, response_proof, response_process_time, min_process_time, timeout, expected_value):
+    assert reward(proof_bytes, response_proof, response_process_time, min_process_time, timeout) == expected_value
 
 @pytest.mark.asyncio
 async def test_validator_forward(compile_prover_lib, setup_validator):

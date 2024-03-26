@@ -51,7 +51,7 @@ class Validator(BaseValidatorNeuron):
         timeout: float,
     ) -> torch.FloatTensor:
         # Get the fastest processing time.
-        min_process_time = min([resp[1] for response in responses])
+        min_process_time = min([response[1] for response in responses])
         return torch.FloatTensor(
             [reward(proof_bytes, response[0], response[1], min_process_time, timeout) for response in responses]
         ).to(self.device)
@@ -68,11 +68,13 @@ async def query(self, trace: Trace, proof_bytes: bytes) -> torch.FloatTensor:
 
     def try_deserialize(item: Trace):
         try:
-            return item.deserialize(), item.process_time
+            return item.deserialize(), item.dendrite.process_time
         except:
-            return bytes(), 0.0
+            return bytes(), timeout + 1.0
 
+    print(responses)
     responses = [try_deserialize(item) for item in responses]
+    print(responses)
 
     # Log the results for monitoring purposes. We don't log the actual response since
     # proofs are enormous and it would pollute the logs.
