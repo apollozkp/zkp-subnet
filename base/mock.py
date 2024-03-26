@@ -90,7 +90,6 @@ class MockDendrite(bt.dendrite):
                 s = synapse.copy()
                 s = self.preprocess_synapse_for_request(axon, s, timeout)
                 process_time = random.random()
-                print(process_time)
                 if process_time < timeout:
                     s.dendrite.process_time = str(time.time() - start_time)
                     s.proof = base64.b64encode(bytes("abc", "utf-8"))

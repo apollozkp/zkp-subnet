@@ -72,9 +72,7 @@ async def query(self, trace: Trace, proof_bytes: bytes) -> torch.FloatTensor:
         except:
             return bytes(), timeout + 1.0
 
-    print(responses)
     responses = [try_deserialize(item) for item in responses]
-    print(responses)
 
     # Log the results for monitoring purposes. We don't log the actual response since
     # proofs are enormous and it would pollute the logs.
