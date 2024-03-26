@@ -76,8 +76,8 @@ class MockDendrite(bt.dendrite):
         self,
         axons: List[bt.axon],
         synapse: bt.Synapse = bt.Synapse(),
-        timeout: float = 12,
-        deserialize: bool = True,
+        timeout: float = 10,
+        deserialize: bool = False,
         run_async: bool = True,
         streaming: bool = False,
     ):
@@ -90,6 +90,7 @@ class MockDendrite(bt.dendrite):
                 s = synapse.copy()
                 s = self.preprocess_synapse_for_request(axon, s, timeout)
                 process_time = random.random()
+                print(process_time)
                 if process_time < timeout:
                     s.dendrite.process_time = str(time.time() - start_time)
                     s.proof = base64.b64encode(bytes("abc", "utf-8"))
