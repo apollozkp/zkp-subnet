@@ -1,7 +1,7 @@
 <div align="center">
 
 # **Apollo Collaborative Zero-knowledge Proof Generation Subnet**
-[![Discord Chat](https://img.shields.io/discord/308323056592486420.svg)](https://discord.gg/bittensor)
+[![Discord Chat](https://img.shields.io/discord/308323056592486420.svg)](https://discord.com/channels/799672011265015819/1222672871092912262)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) 
 ![example workflow](https://github.com/apollozkp/zkp-subnet/actions/workflows/ci.yml/badge.svg)
 [![Coverage Status](https://coveralls.io/repos/github/apollozkp/zkp-subnet/badge.svg?branch=main)](https://coveralls.io/github/apollozkp/zkp-subnet?branch=main)
