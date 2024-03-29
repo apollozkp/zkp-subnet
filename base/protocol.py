@@ -15,14 +15,91 @@
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
-import typing
-import base64
 import bittensor as bt
+from pydantic import Field
 
-class Trace(bt.Synapse):
-    main_trace: str
-    pub_inputs: str
-    proof: typing.Optional[str] = None
 
-    def deserialize(self) -> bytes:
-        return base64.b64decode(self.proof)
+class Commit(bt.Synapse):
+    """
+    A protocol for handling KZG commitments.
+    """
+
+    polynomial: str = Field(
+        ...,
+        title="Polynomial",
+        description="The polynomial to commit to.",
+        allow_mutation=False,
+    )
+    commitment: str = Field(
+        ...,
+        title="Commitment",
+        description="The commitment to the polynomial.",
+        allow_mutation=True,
+    )
+
+
+class Prove(bt.Synapse):
+    """
+    A protocol for proving KZG commitments.
+    """
+
+    commitment: str = Field(
+        ...,
+        title="Commitment",
+        description="The commitment to prove.",
+        allow_mutation=False,
+    )
+    x: str = Field(
+        ...,
+        title="Input",
+        description="The input to evaluate the polynomial at.",
+        allow_mutation=False,
+    )
+    y: str = Field(
+        ...,
+        title="Output",
+        description="The output of the polynomial at x.",
+        allow_mutation=False,
+    )
+
+    proof: str = Field(
+        ...,
+        title="Proof",
+        description="The proof of the commitment.",
+        allow_mutation=True,
+    )
+
+
+class Verify(bt.Synapse):
+    """
+    A protocol for verifying KZG commitments.
+    """
+
+    commitment: str = Field(
+        ..., title="Commitment", description="The commitment to verify."
+    )
+    y: str = Field(
+        ...,
+        title="Output",
+        description="The output of the polynomial at x.",
+        allow_mutation=False,
+    )
+    x: str = Field(
+        ...,
+        title="Input",
+        description="The input to evaluate the polynomial at.",
+        allow_mutation=False,
+    )
+    proof: str = Field(
+        ...,
+        title="Proof",
+        description="The proof of the commitment.",
+        allow_mutation=False,
+    )
+
+    valid: str = Field(
+        ...,
+        title="Valid",
+        description="Whether the proof is valid.",
+        allow_mutation=False,
+    )

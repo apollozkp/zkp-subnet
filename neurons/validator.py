@@ -17,19 +17,20 @@
 
 
 import time
-import torch
 from typing import List, Tuple
 
 # Bittensor
 import bittensor as bt
-
-# import base validator class which takes care of most of the boilerplate
-from base.validator import BaseValidatorNeuron
+import torch
 
 # Import forward dependencies.
 from base.protocol import Trace
+
+# import base validator class which takes care of most of the boilerplate
+from base.validator import BaseValidatorNeuron
 from utils.cairo_generator import generate_random_cairo_trace
 from utils.uids import get_random_uids
+
 
 class Validator(BaseValidatorNeuron):
     def __init__(self, config=None):
@@ -42,7 +43,7 @@ class Validator(BaseValidatorNeuron):
         # proofs of the given trace, rather than just creating any random garbage proof that will pass
         # verification.
         trace, proof_bytes = generate_random_cairo_trace()
-        await query(self, trace, proof_bytes)
+        await self.query(trace, proof_bytes)
 
     def get_rewards(
         self,
@@ -53,42 +54,54 @@ class Validator(BaseValidatorNeuron):
         # Get the fastest processing time.
         min_process_time = min([response[1] for response in responses])
         return torch.FloatTensor(
-            [reward(proof_bytes, response[0], response[1], min_process_time, timeout) for response in responses]
+            [
+                reward(proof_bytes, response[0], response[1], min_process_time, timeout)
+                for response in responses
+            ]
         ).to(self.device)
 
-async def query(self, trace: Trace, proof_bytes: bytes) -> torch.FloatTensor:
-    miner_uids = get_random_uids(self, k=min(self.config.neuron.sample_size, self.metagraph.n.item()))
-    timeout = 10
-    responses = await self.dendrite(
-        axons=[self.metagraph.axons[uid] for uid in miner_uids],
-        synapse=trace, # send in the execution trace
-        deserialize=False, # bogus responses shouldn't kill the validation flow
-        timeout=timeout,
-    )
+    async def query(self, trace: Trace, proof_bytes: bytes) -> torch.FloatTensor:
+        miner_uids = get_random_uids(
+            self, k=min(self.config.neuron.sample_size, self.metagraph.n.item())
+        )
+        timeout = 10
+        responses = await self.dendrite(
+            axons=[self.metagraph.axons[uid] for uid in miner_uids],
+            synapse=trace,  # send in the execution trace
+            deserialize=False,  # bogus responses shouldn't kill the validation flow
+            timeout=timeout,
+        )
 
-    def try_deserialize(item: Trace):
-        try:
-            return item.deserialize(), item.dendrite.process_time
-        except:
-            return bytes(), timeout + 1.0
+        def try_deserialize(item: Trace):
+            try:
+                return item.deserialize(), item.dendrite.process_time
+            except Exception:
+                return bytes(), timeout + 1.0
 
-    responses = [try_deserialize(item) for item in responses]
+        responses = [try_deserialize(item) for item in responses]
 
-    # Log the results for monitoring purposes. We don't log the actual response since
-    # proofs are enormous and it would pollute the logs.
-    bt.logging.info(f"Received responses.")
+        # Log the results for monitoring purposes. We don't log the actual response since
+        # proofs are enormous and it would pollute the logs.
+        bt.logging.info("Received responses.")
 
-    # Adjust the scores based on responses from miners.
-    rewards = self.get_rewards(proof_bytes, responses, timeout)
-    bt.logging.info(f"Scored responses: {rewards}")
+        # Adjust the scores based on responses from miners.
+        rewards = self.get_rewards(proof_bytes, responses, timeout)
+        bt.logging.info(f"Scored responses: {rewards}")
 
-    # Update the scores based on the rewards. You may want to define your own update_scores function for custom behavior.
-    self.update_scores(rewards, miner_uids)
+        # Update the scores based on the rewards. You may want to define your own update_scores function for custom behavior.
+        self.update_scores(rewards, miner_uids)
+
 
 # it's sufficient for us to check exact matches between proof bytes and pub inputs bytes.
 # verifying the proof would be redundant at this stage, but a later update would likely make
 # it more sensible to opt for proof verification instead of byte matching
-def reward(proof_bytes: bytes, response_proof: bytes, response_process_time: float, min_process_time: float, timeout: float) -> float:
+def reward(
+    proof_bytes: bytes,
+    response_proof: bytes,
+    response_process_time: float,
+    min_process_time: float,
+    timeout: float,
+) -> float:
     if response_process_time > timeout:
         return 0.0
 
@@ -98,6 +111,7 @@ def reward(proof_bytes: bytes, response_proof: bytes, response_process_time: flo
     time_off_from_min = response_process_time - min_process_time
     max_time = timeout - min_process_time
     return 1.0 - time_off_from_min / max_time
+
 
 # The main function parses the configuration and runs the validator.
 if __name__ == "__main__":
