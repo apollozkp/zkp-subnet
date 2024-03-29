@@ -12,7 +12,9 @@
 
 ## Introduction
 
-Bittensor subnets are a great way to provide open APIs aimed at outsourcing certain computational workloads, whether it be model inference, distributed learning or other highly specific compute. However, a key ingredient to create extra valuable APIs is simply the leveraging of collaborative computation, rather than competitive computation. We believe that Bittensor will only be fully leveraged if subnets begin thinking more deeply about collaborative mining in tandem with the current approach. This is why we are building Apollo, and our first subnet will be a great example of the potential impact we can make; which is aimed at fruitfully combining compute power to achieve competitive results on the open market. Our first objective - to create a publicly available, massively scalable, concretely competitive and extremely cost-effective zero-knowledge proof generation cluster, by leveraging the work of [Pianist](https://eprint.iacr.org/2023/1271.pdf).
+Bittensor subnets are a great way to provide open APIs aimed at outsourcing certain computational workloads, whether it be model inference, distributed learning or other highly specific compute. However, a key ingredient to create extra valuable APIs is simply the leveraging of collaborative computation, rather than competitive computation. We believe that Bittensor will only be fully leveraged if subnets begin thinking more deeply about collaborative mining in tandem with the current approach. This is why we are building Apollo, and our first subnet will be a great example of the potential impact we can make; which is aimed at fruitfully combining compute power to achieve competitive results on the open market.
+
+Our first objective - to create a publicly available, massively scalable, concretely competitive and extremely cost-effective zero-knowledge proof generation cluster, by leveraging the work of [Pianist](https://eprint.iacr.org/2023/1271.pdf).
 
 Our aim with this subnet is to provide a public API which can easily undercut costs of bespoke GPU cluster solutions, and to become the go-to solution for many blockchain protocols and applications that are live today which leverage the magic of zero-knowledge proofs.
 
@@ -29,12 +31,12 @@ Our aim with this subnet is to provide a public API which can easily undercut co
 
 ## Hardware requirements
 
-For this version 0, it is advised that validators run slightly stronger hardware than miners do. This is needed due to the computational cost of converting Cairo programs to a set of constraints which a miner can then prove to signal his capability. Over time, as we move over to KZG based random circuits and proof generation, this requirement will drop for the validator and the miners will be able to compete more effectively.
+As we move towards improving and completing more of the stack, these requirements will slowly go up - especially as more powerful hardware and more competitors enter the subnet (as speed determines everything!), but for the initial version these specs should do:
 
 ### Validator requirements
 
 - Ubuntu 22.04
-- At least 8 vCPUs
+- At least 4 vCPUs
 - At least 16 GB RAM (DDR4 or higher)
 - 200 GB storage
 
