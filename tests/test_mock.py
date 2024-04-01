@@ -1,8 +1,7 @@
-import pytest
-import asyncio
 import bittensor as bt
+import pytest
+
 from base.mock import MockMetagraph, MockSubtensor
-from base.protocol import Trace
 
 
 @pytest.mark.parametrize("netuid", [2, 3, 4])
@@ -25,12 +24,11 @@ def test_mock_subtensor(netuid, n, wallet):
         )
 
     for neuron in neurons:
-        assert type(neuron) == bt.NeuronInfo
-        assert subtensor.is_hotkey_registered(
-            netuid=netuid, hotkey_ss58=neuron.hotkey
-        )
+        assert isinstance(neuron, bt.NeuronInfo)
+        assert subtensor.is_hotkey_registered(netuid=netuid, hotkey_ss58=neuron.hotkey)
 
     subtensor.reset()
+
 
 @pytest.mark.parametrize("n", [16, 32, 64])
 def test_mock_metagraph(n):
@@ -41,7 +39,7 @@ def test_mock_metagraph(n):
     assert len(axons) == n
     # Check ip and port
     for axon in axons:
-        assert type(axon) == bt.AxonInfo
+        assert isinstance(axon, bt.AxonInfo)
         assert axon.ip == "127.0.0.0"
         assert axon.port == 8091
 

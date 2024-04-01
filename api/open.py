@@ -99,3 +99,9 @@ async def open(
     )
 
     return proof
+
+if __name__ == "__main__":
+    api = OpenAPI(bt.wallet())
+    
+    synapse = api.prepare_synapse("commitment", "x", "y")
+

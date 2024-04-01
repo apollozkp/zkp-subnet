@@ -15,17 +15,15 @@
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
-import base64
 import time
 import typing
 
 import bittensor as bt
 from fourier import Client
 
-import base
-
 # import base miner class which takes care of most of the boilerplate
 from base.miner import BaseMinerNeuron
+from base.protocol import Commit, Open, Verify
 
 
 class ClientConfig:
@@ -34,9 +32,8 @@ class ClientConfig:
         self.port = port
 
 
-class MinerConfig(base.BaseConfig):
+class MinerConfig:
     def __init__(self):
-        super().__init__()
         self.client_config = ClientConfig()
 
     def __str__(self):
@@ -59,7 +56,8 @@ class Miner(BaseMinerNeuron):
         self.client = Client()
         self.client.start()
 
-    async def blacklist(self, synapse: base.protocol.Trace) -> typing.Tuple[bool, str]:
+    # TODO: split blacklist for each request type?
+    async def blacklist(self, synapse: bt.Synapse) -> typing.Tuple[bool, str]:
         """
         Check if the hotkey is blacklisted.
         """
@@ -80,7 +78,8 @@ class Miner(BaseMinerNeuron):
                 )
                 return True, "Unrecognized hotkey"
 
-    async def priority(self, synapse: base.protocol.Trace) -> float:
+    # TODO: split priority for each request type?
+    async def priority(self, synapse: bt.Synapse) -> float:
         """
         Get the priority of the hotkey.
         """
@@ -95,7 +94,7 @@ class Miner(BaseMinerNeuron):
         )
         return priority
 
-    def commit(self, synapse: base.protocol.Commit) -> base.protocol.Commit:
+    def commit(self, synapse: Commit) -> Commit:
         """
         Query the connected ZKG RPC server (commit).
         """
@@ -109,7 +108,7 @@ class Miner(BaseMinerNeuron):
                 bt.log.error(f"Error committing: {resp}")
         return synapse
 
-    def open(self, synapse: base.protocol.Open) -> base.protocol.Open:
+    def open(self, synapse: Open) -> Open:
         """
         Query the connected ZKG RPC server (open).
         """
@@ -123,7 +122,7 @@ class Miner(BaseMinerNeuron):
                 bt.log.error(f"Error opening: {resp}")
         return synapse
 
-    def verify(self, synapse: base.protocol.Verify) -> base.protocol.Verify:
+    def verify(self, synapse: Verify) -> Verify:
         """
         Query the connected ZKG RPC server (verify).
         """

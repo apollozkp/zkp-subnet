@@ -22,8 +22,6 @@ import time
 import traceback
 
 import bittensor as bt
-import torch
-from bittensor.errors import NotVerifiedException
 
 from base.neuron import BaseNeuron
 from utils.config import add_miner_args
