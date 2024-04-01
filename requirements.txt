@@ -2,3 +2,4 @@ bittensor
 torch
 cairo-lang
 pytest-cov
+git+https://github.com/apollozkp/fourier.git

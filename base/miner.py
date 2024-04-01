@@ -15,14 +15,14 @@
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
-import time
-import torch
+import argparse
 import asyncio
 import threading
-import argparse
+import time
 import traceback
 
 import bittensor as bt
+import torch
 from bittensor.errors import NotVerifiedException
 
 from base.neuron import BaseNeuron
@@ -47,23 +47,34 @@ class BaseMinerNeuron(BaseNeuron):
         # Warn if allowing incoming requests from anyone.
         if not self.config.blacklist.force_validator_permit:
             bt.logging.warning(
-                "You are allowing non-validators to send requests to your miner. This is a security risk."
+                "You are allowing non-validators to send requests to your miner. This"
+                " is a security risk."
             )
         if self.config.blacklist.allow_non_registered:
             bt.logging.warning(
-                "You are allowing non-registered entities to send requests to your miner. This is a security risk."
+                "You are allowing non-registered entities to send requests to your"
+                " miner. This is a security risk."
             )
 
         # The axon handles request processing, allowing validators to send this miner requests.
         self.axon = bt.axon(wallet=self.wallet, config=self.config)
 
         # Attach determiners which functions are called when servicing a request.
-        bt.logging.info(f"Attaching forward function to miner axon.")
+        bt.logging.info("Attaching forward function to miner axon.")
         self.axon.attach(
-            forward_fn=self.forward,
+            forward_fn=self.commit,
+            blacklist_fn=self.blacklist,
+            priority_fn=self.priority,
+        ).attach(
+            forward_fn=self.open,
+            blacklist_fn=self.blacklist,
+            priority_fn=self.priority,
+        ).attach(
+            forward_fn=self.verify,
             blacklist_fn=self.blacklist,
             priority_fn=self.priority,
         )
+
         bt.logging.info(f"Axon created: {self.axon}")
 
         # Instantiate runners
@@ -101,7 +112,8 @@ class BaseMinerNeuron(BaseNeuron):
         # Serve passes the axon information to the network + netuid we are hosting on.
         # This will auto-update if the axon port of external ip have changed.
         bt.logging.info(
-            f"Serving miner axon {self.axon} on network: {self.config.subtensor.chain_endpoint} with netuid: {self.config.netuid}"
+            f"Serving miner axon {self.axon} on network:"
+            f" {self.config.subtensor.chain_endpoint} with netuid: {self.config.netuid}"
         )
         self.axon.serve(netuid=self.config.netuid, subtensor=self.subtensor)
 
@@ -139,7 +151,7 @@ class BaseMinerNeuron(BaseNeuron):
                 exit()
 
             # In case of unforeseen errors, the miner will log the error and continue operations.
-            except Exception as e:
+            except Exception:
                 bt.logging.error(traceback.format_exc())
 
     def run_in_background_thread(self):

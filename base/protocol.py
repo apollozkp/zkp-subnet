@@ -18,13 +18,15 @@
 import bittensor as bt
 from pydantic import Field
 
+from typing import List
+
 
 class Commit(bt.Synapse):
     """
     A protocol for handling KZG commitments.
     """
 
-    polynomial: str = Field(
+    poly: List[str] = Field(
         ...,
         title="Polynomial",
         description="The polynomial to commit to.",
@@ -38,7 +40,7 @@ class Commit(bt.Synapse):
     )
 
 
-class Prove(bt.Synapse):
+class Open(bt.Synapse):
     """
     A protocol for proving KZG commitments.
     """
@@ -53,12 +55,6 @@ class Prove(bt.Synapse):
         ...,
         title="Input",
         description="The input to evaluate the polynomial at.",
-        allow_mutation=False,
-    )
-    y: str = Field(
-        ...,
-        title="Output",
-        description="The output of the polynomial at x.",
         allow_mutation=False,
     )
 
@@ -97,7 +93,7 @@ class Verify(bt.Synapse):
         allow_mutation=False,
     )
 
-    valid: str = Field(
+    valid: bool = Field(
         ...,
         title="Valid",
         description="Whether the proof is valid.",

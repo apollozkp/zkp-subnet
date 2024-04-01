@@ -15,43 +15,57 @@
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
+import base64
 import time
 import typing
-import base64
+
 import bittensor as bt
+from fourier import Client
 
 import base
 
 # import base miner class which takes care of most of the boilerplate
 from base.miner import BaseMinerNeuron
-from utils.rust import make_proof
 
-from utils.cairo_generator import LIB_PATH
+
+class ClientConfig:
+    def __init__(self, host: str = "127.0.0.1", port: int = 1337):
+        self.host = host
+        self.port = port
+
+
+class MinerConfig(base.BaseConfig):
+    def __init__(self):
+        super().__init__()
+        self.client_config = ClientConfig()
+
+    def __str__(self):
+        return str(self.__dict__)
+
 
 class Miner(BaseMinerNeuron):
     def __init__(self, config=None):
         super(Miner, self).__init__(config=config)
+        self.client = Client()
+        self.client.start()
 
-    async def forward(
-        self, synapse: base.protocol.Trace
-    ) -> base.protocol.Trace:
+    async def forward(self, synapse: base.protocol.Trace) -> base.protocol.Trace:
         return forward(synapse)
 
-    async def blacklist(
-        self, synapse: base.protocol.Trace
-    ) -> typing.Tuple[bool, str]:
+    async def blacklist(self, synapse: base.protocol.Trace) -> typing.Tuple[bool, str]:
         try:
             uid = self.metagraph.hotkeys.index(synapse.dendrite.hotkey)
             bt.logging.trace(
                 f"Not Blacklisting recognized hotkey {synapse.dendrite.hotkey}"
             )
             return False, "Hotkey recognized!"
-        except:
+        except Exception:
             if self.config.blacklist.allow_non_registered:
                 return False, "Allowing unregistered hotkey"
             else:
                 bt.logging.warning(
-                    f"Blacklisting a request from unregistered hotkey {synapse.dendrite.hotkey}"
+                    "Blacklisting a request from unregistered hotkey"
+                    f" {synapse.dendrite.hotkey}"
                 )
                 return True, "Unrecognized hotkey"
 
@@ -67,20 +81,39 @@ class Miner(BaseMinerNeuron):
         )
         return priority
 
-def forward(synapse: base.protocol.Trace, lib_path: str=LIB_PATH) -> base.protocol.Trace:
-    # Decode the strings to bytes for Rust.
-    main_trace = base64.b64decode(synapse.main_trace)
-    pub_inputs = base64.b64decode(synapse.pub_inputs)
+    def commit(self, synapse: base.protocol.Commit) -> base.protocol.Commit:
+        with self.client.commit(synapse.poly) as resp:
+            if resp.get("error"):
+                bt.log.error(f"Error committing: {resp.get('error')}")
+                return synapse
+            elif resp.get("result").get("commitment"):
+                synapse.commitment = resp.get("result").get("commitment")
+            else:
+                bt.log.error(f"Error committing: {resp}")
+        return synapse
 
-    # Generate the actual proof.
-    proof = make_proof(main_trace, pub_inputs, lib_path)
+    def open(self, synapse: base.protocol.Open) -> base.protocol.Open:
+        with self.client.open(synapse.commitment, synapse.x) as resp:
+            if resp.get("error"):
+                bt.log.error(f"Error opening: {resp.get('error')}")
+                return synapse
+            elif resp.get("result").get("proof"):
+                synapse.proof = resp.get("result").get("proof")
+            else:
+                bt.log.error(f"Error opening: {resp}")
+        return synapse
 
-    # And re-encode back to base64 strings; because Python apparently doesn't know that JSON
-    # can just take byte arrays, and so we have to coddle it :)
-    proof = base64.b64encode(proof)
+    def verify(self, synapse: base.protocol.Verify) -> base.protocol.Verify:
+        with self.client.verify(synapse.commitment) as resp:
+            if resp.get("error"):
+                bt.log.error(f"Error verifying: {resp.get('error')}")
+                return synapse
+            elif resp.get("result").get("valid"):
+                synapse.valid = resp.get("result").get("valid")
+            else:
+                bt.log.error(f"Error verifying: {resp}")
+        return synapse
 
-    synapse.proof = proof
-    return synapse
 
 # This is the main function, which runs the miner.
 if __name__ == "__main__":
