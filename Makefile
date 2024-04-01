@@ -6,7 +6,7 @@ clean:
 .ensure-deps:
 	sudo apt-get update && sudo apt-get install libgmp-dev nodejs npm # we need gmp for cairo lib and nodejs for pm2
 	npm install -g pm2
-	. "$$HOME/.cargo/env" # source cargo just in case shell was never reloaded
+	-. "$$HOME/.cargo/env" # source cargo just in case shell was never reloaded
 	@command -v cargo >/dev/null 2>&1 || { \
 		echo >&2 "Rust not installed. Installing..."; \
 		curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y; \
