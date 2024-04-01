@@ -28,7 +28,6 @@ from base.protocol import Commit
 
 # import base validator class which takes care of most of the boilerplate
 from base.validator import BaseValidatorNeuron
-from utils.cairo_generator import generate_random_cairo_trace
 from utils.uids import get_random_uids
 
 
@@ -52,9 +51,9 @@ class Validator(BaseValidatorNeuron):
         # proofs of the given trace, rather than just creating any random garbage proof that will pass
         # verification.
         # TODO: replace this with something else (random circuit?)
-        trace, proof_bytes = generate_random_cairo_trace()
 
-        await self.query(trace, proof_bytes)
+        # await self.query(trace, proof_bytes)
+        pass
 
     def get_rewards(
         self,
