@@ -24,7 +24,7 @@ import bittensor as bt
 import torch
 
 # Import forward dependencies.
-from base.protocol import Trace
+from base.protocol import Commit
 
 # import base validator class which takes care of most of the boilerplate
 from base.validator import BaseValidatorNeuron
@@ -33,24 +33,38 @@ from utils.uids import get_random_uids
 
 
 class Validator(BaseValidatorNeuron):
+    """
+    Validator class for the ZKG network.
+    The validator handles the following tasks:
+    - challenge: Generate a challenge for the miners to solve.
+    """
+
     def __init__(self, config=None):
         super(Validator, self).__init__(config=config)
         bt.logging.info("load_state()")
         self.load_state()
 
     async def forward(self):
+        """
+        Generate a challenge for the miners to solve.
+        """
         # For completeness, validators also need to generate proofs to ensure that miners are generating
         # proofs of the given trace, rather than just creating any random garbage proof that will pass
         # verification.
+        # TODO: replace this with something else (random circuit?)
         trace, proof_bytes = generate_random_cairo_trace()
+
         await self.query(trace, proof_bytes)
 
     def get_rewards(
         self,
         proof_bytes: bytes,
-        responses: List[Tuple[bytes, float]],
+        responses: List[Tuple[str, float]],
         timeout: float,
     ) -> torch.FloatTensor:
+        """
+        Calculate the miner rewards based on correctness and processing time.
+        """
         # Get the fastest processing time.
         min_process_time = min([response[1] for response in responses])
         return torch.FloatTensor(
@@ -60,32 +74,28 @@ class Validator(BaseValidatorNeuron):
             ]
         ).to(self.device)
 
-    async def query(self, trace: Trace, proof_bytes: bytes) -> torch.FloatTensor:
+    async def query(self, synapse: Commit, proof: str) -> torch.FloatTensor:
+        """
+        Query the connected miners with a challenge
+        """
         miner_uids = get_random_uids(
             self, k=min(self.config.neuron.sample_size, self.metagraph.n.item())
         )
         timeout = 10
         responses = await self.dendrite(
             axons=[self.metagraph.axons[uid] for uid in miner_uids],
-            synapse=trace,  # send in the execution trace
+            synapse=synapse,  # send in the execution trace
             deserialize=False,  # bogus responses shouldn't kill the validation flow
             timeout=timeout,
         )
 
-        def try_deserialize(item: Trace):
-            try:
-                return item.deserialize(), item.dendrite.process_time
-            except Exception:
-                return bytes(), timeout + 1.0
+        proofs = [item.deserialize() for item in responses]
 
-        responses = [try_deserialize(item) for item in responses]
-
-        # Log the results for monitoring purposes. We don't log the actual response since
-        # proofs are enormous and it would pollute the logs.
-        bt.logging.info("Received responses.")
+        # proofs should be fairly small, so we can log then
+        bt.logging.info(f"Received responses. {proofs}")
 
         # Adjust the scores based on responses from miners.
-        rewards = self.get_rewards(proof_bytes, responses, timeout)
+        rewards = self.get_rewards(proof, proofs, timeout)
         bt.logging.info(f"Scored responses: {rewards}")
 
         # Update the scores based on the rewards. You may want to define your own update_scores function for custom behavior.

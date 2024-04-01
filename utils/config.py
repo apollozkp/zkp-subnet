@@ -235,6 +235,10 @@ def add_validator_args(cls, parser):
         default="opentensor-dev",
     )
 
+def add_api_args(cls, parser):
+    # TODO: Add API specific arguments to the parser.
+    pass
+
 
 def config(cls):
     """

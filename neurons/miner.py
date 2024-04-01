@@ -44,19 +44,30 @@ class MinerConfig(base.BaseConfig):
 
 
 class Miner(BaseMinerNeuron):
+    """
+    Miner class for the ZKG network.
+    The miner handles the following tasks:
+    - commit: Compute the commitment of a polynomial.
+    - open: Compute the proof of a commitment.
+    - verify: Verify the proof of a commitment.
+    """
+
     def __init__(self, config=None):
         super(Miner, self).__init__(config=config)
+
+        # Start the local ZKG RPC server.
         self.client = Client()
         self.client.start()
 
-    async def forward(self, synapse: base.protocol.Trace) -> base.protocol.Trace:
-        return forward(synapse)
-
     async def blacklist(self, synapse: base.protocol.Trace) -> typing.Tuple[bool, str]:
+        """
+        Check if the hotkey is blacklisted.
+        """
         try:
             uid = self.metagraph.hotkeys.index(synapse.dendrite.hotkey)
             bt.logging.trace(
-                f"Not Blacklisting recognized hotkey {synapse.dendrite.hotkey}"
+                f"Not Blacklisting recognized hotkey {synapse.dendrite.hotkey} with uid"
+                f" {uid}"
             )
             return False, "Hotkey recognized!"
         except Exception:
@@ -70,6 +81,9 @@ class Miner(BaseMinerNeuron):
                 return True, "Unrecognized hotkey"
 
     async def priority(self, synapse: base.protocol.Trace) -> float:
+        """
+        Get the priority of the hotkey.
+        """
         caller_uid = self.metagraph.hotkeys.index(
             synapse.dendrite.hotkey
         )  # Get the caller index.
@@ -82,6 +96,9 @@ class Miner(BaseMinerNeuron):
         return priority
 
     def commit(self, synapse: base.protocol.Commit) -> base.protocol.Commit:
+        """
+        Query the connected ZKG RPC server (commit).
+        """
         with self.client.commit(synapse.poly) as resp:
             if resp.get("error"):
                 bt.log.error(f"Error committing: {resp.get('error')}")
@@ -93,6 +110,9 @@ class Miner(BaseMinerNeuron):
         return synapse
 
     def open(self, synapse: base.protocol.Open) -> base.protocol.Open:
+        """
+        Query the connected ZKG RPC server (open).
+        """
         with self.client.open(synapse.commitment, synapse.x) as resp:
             if resp.get("error"):
                 bt.log.error(f"Error opening: {resp.get('error')}")
@@ -104,6 +124,9 @@ class Miner(BaseMinerNeuron):
         return synapse
 
     def verify(self, synapse: base.protocol.Verify) -> base.protocol.Verify:
+        """
+        Query the connected ZKG RPC server (verify).
+        """
         with self.client.verify(synapse.commitment) as resp:
             if resp.get("error"):
                 bt.log.error(f"Error verifying: {resp.get('error')}")
