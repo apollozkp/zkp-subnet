@@ -35,6 +35,7 @@ class Miner(BaseMinerNeuron):
     async def forward(
         self, synapse: base.protocol.Trace
     ) -> base.protocol.Trace:
+        bt.logging.info("Circuit received, generating proof...")
         return forward(synapse)
 
     async def blacklist(
@@ -80,6 +81,7 @@ def forward(synapse: base.protocol.Trace, lib_path: str=LIB_PATH) -> base.protoc
     proof = base64.b64encode(proof)
 
     synapse.proof = proof
+    bt.logging.info("Proof generated.")
     return synapse
 
 # This is the main function, which runs the miner.
