@@ -18,6 +18,19 @@ Our first objective - to create a publicly available, massively scalable, concre
 
 Our aim with this subnet is to provide a public API which can easily undercut costs of bespoke GPU cluster solutions, and to become the go-to solution for many blockchain protocols and applications that are live today which leverage the magic of zero-knowledge proofs.
 
+## Features
+
+- Out of the box working implementation for good-enough proving speed (CPU only for now)
+- One-command setup, with easy process management through `pm2`
+- Context-dependent validation scoring (always at least one winner)
+- Fully randomized validation inputs, keeping mining fair
+
+### To be added
+
+- Out of the box CUDA implementation for simpler competition
+- Tutorials and tooling to create your own proving clusters, or using your own specialized hardware
+- An open, permissionless, market-driven API which opens up a powerful proving cluster to the public, allowing for ZK usecases before considered infeasible, such as provable inference
+
 ## Roadmap
 
 - [x] Deploy v0 on Bittensor testnet
