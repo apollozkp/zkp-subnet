@@ -8,7 +8,7 @@ install_dependencies() {
         echo "Updating system packages..."
         sudo apt update
         echo "Installing required packages..."
-        sudo apt install --assume-yes make build-essential git clang curl libssl-dev llvm libudev-dev protobuf-compiler tmux libgmp-dev
+        sudo apt install --assume-yes make build-essential git clang curl libssl-dev llvm libudev-dev protobuf-compiler tmux libgmp-dev python3-pip
     }
 
     # Detect OS and call the appropriate function
@@ -21,9 +21,6 @@ install_dependencies() {
 
     # Install rust and cargo
     curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-
-    # Update your shell's source to include Cargo's path
-    source "$HOME/.cargo/env"
 }
 
 # Call install_dependencies only if it's the first time running the script
@@ -32,6 +29,8 @@ if [ ! -f ".dependencies_installed" ]; then
     touch .dependencies_installed
 fi
 
+# Update your shell's source to include Cargo's path
+source "$HOME/.cargo/env"
 
 # Section 2: Test/Run
 # This section is for running and testing the setup.
