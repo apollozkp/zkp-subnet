@@ -2,6 +2,7 @@ NETWORK=${1:-127.0.0.1:9946}
 WALLET=${2:-owner}
 MINER=${3:-miner}
 VALIDATOR=${4:-validator}
+NETUID=${5:-1}
 
 miner-staging() {
     IFS=: read -r IP PORT <<< "$NETWORK"
@@ -13,7 +14,7 @@ miner-staging() {
 	
     # restart script if it fails
     while true; do
-        python3 neurons/miner.py --netuid 1 --subtensor.chain_endpoint $NETWORK --wallet.name $MINER --wallet.hotkey default --logging.debug
+        python3 neurons/miner.py --netuid $NETUID --subtensor.chain_endpoint $NETWORK --wallet.name $MINER --wallet.hotkey default --logging.debug
         sleep 15
     done
 }
