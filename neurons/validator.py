@@ -22,14 +22,27 @@ from typing import List, Tuple
 # Bittensor
 import bittensor as bt
 import torch
+from fourier import Client
 
 # Import forward dependencies.
-from base.protocol import Commit
+from base.protocol import Commit, Open, Verify
 
 # import base validator class which takes care of most of the boilerplate
 from base.validator import BaseValidatorNeuron
 from utils.uids import get_random_uids
 
+class Challenge:
+    def __init__(self, poly: str, x: str, y: str, commitment: str, proof: str):
+        self.poly = poly
+        self.x = x
+        self.y = y
+        self.commitment = commitment
+
+    def synapse(self):
+        return Open(
+            poly=self.poly,
+            x=self.x,
+        )
 
 class Validator(BaseValidatorNeuron):
     """
@@ -42,38 +55,120 @@ class Validator(BaseValidatorNeuron):
         super(Validator, self).__init__(config=config)
         bt.logging.info("load_state()")
         self.load_state()
+        # change port to 1338 so it doesn't conflict with the miner
+        PORT = 1338
+        self.client = Client(port=PORT)
+        self.client.start()
 
-    async def forward(self):
+    def rpc_commit(self, poly: str) -> str:
+        with self.client.commit(poly) as response:
+            if response.status_code != 200:
+                bt.logging.error(
+                    f"RPC request failed with status: {response.status_code}"
+                )
+                raise Exception("Failed to commit to the polynomial.")
+            return response.json().get("result", {}).get("commitment")
+
+    def rpc_open(self, poly: str, x: str) -> str:
+        with self.client.open(poly, x) as response:
+            if response.status_code != 200:
+                bt.logging.error(
+                    f"RPC request failed with status: {response.status_code}"
+                )
+                raise Exception("Failed to open the commitment.")
+            return response.json().get("result", {}).get("proof")
+
+    def rpc_verify(self, proof: str, x: str, y: str, commitment: str) -> bool:
+        with self.client.verify(proof, x, y, commitment) as response:
+            if response.status_code != 200:
+                bt.logging.error(
+                    f"RPC request failed with status: {response.status_code}"
+                )
+                raise Exception("Failed to verify the proof.")
+            return response.json().get("result", {}).get("valid")
+
+    def rpc_random_poly(self, degree: int) -> str:
+        with self.client.random_poly(degree) as response:
+            if response.status_code != 200:
+                bt.logging.error(
+                    f"RPC request failed with status: {response.status_code}"
+                )
+                raise Exception("Failed to generate a random polynomial.")
+            return response.json().get("result", {}).get("poly")
+
+    def rpc_random_point(self) -> str:
+        with self.client.random_point() as response:
+            if response.status_code != 200:
+                bt.logging.error(
+                    f"RPC request failed with status: {response.status_code}"
+                )
+                raise Exception("Failed to generate a random point.")
+            return response.json().get("result", {}).get("point")
+
+    def rpc_eval(self, poly: str, x: str) -> str:
+        with self.client.eval(poly, x) as response:
+            if response.status_code != 200:
+                bt.logging.error(
+                    f"RPC request failed with status: {response.status_code}"
+                )
+                raise Exception("Failed to evaluate the polynomial.")
+            return response.json().get("result", {}).get("y")
+
+    async def generate_challenge(self) -> Challenge:
         """
         Generate a challenge for the miners to solve.
         """
-        # For completeness, validators also need to generate proofs to ensure that miners are generating
-        # proofs of the given trace, rather than just creating any random garbage proof that will pass
-        # verification.
-        # TODO: replace this with something else (random circuit?)
 
-        # await self.query(trace, proof_bytes)
-        pass
+        # Generate a random polynomial.
+        DEGREE = 10
+        x = self.rpc_random_point()
+        poly = self.rpc_random_poly(DEGREE)
+        y = self.rpc_eval(poly, x)
+        commitment = self.rpc_commit(poly)
+        return Challenge(poly, x, y, commitment)
+
+    async def forward(self):
+        bt.logging.debug("Sleeping for 5 seconds...")
+        time.sleep(5)
+        try:
+            challenge = await self.generate_challenge()
+            await self.query(challenge)
+        except Exception as e:
+            bt.logging.error(f"Failed to generate and query challenge: {e}")
+            bt.logging.error("Retrying in 5 seconds...")
+
+    def reward(self, truth: Verify, response: Open, timeout: float) -> float:
+        """
+        Calculate the miner reward based on correctness and processing time.
+        """
+        valid = self.rpc_verify(
+            proof=response.proof,
+            x=truth.x,
+            y=truth.y,
+            commitment=truth.commitment,
+        )
+
+        if not valid:
+            bt.logging.info("Invalid proof.")
+            return 0.0
+
+        return 1.0 / timeout
 
     def get_rewards(
         self,
-        proof_bytes: bytes,
-        responses: List[Tuple[str, float]],
+        challenge: Verify,
+        responses: List[Open],
         timeout: float,
     ) -> torch.FloatTensor:
         """
         Calculate the miner rewards based on correctness and processing time.
         """
-        # Get the fastest processing time.
-        min_process_time = min([response[1] for response in responses])
+        # How to get the processing time?
         return torch.FloatTensor(
-            [
-                reward(proof_bytes, response[0], response[1], min_process_time, timeout)
-                for response in responses
-            ]
+            [self.reward(challenge, response, timeout) for response in responses]
         ).to(self.device)
 
-    async def query(self, synapse: Commit, proof: str) -> torch.FloatTensor:
+    async def query(self, challenge: Challenge) -> torch.FloatTensor:
         """
         Query the connected miners with a challenge
         """
@@ -83,43 +178,17 @@ class Validator(BaseValidatorNeuron):
         timeout = 10
         responses = await self.dendrite(
             axons=[self.metagraph.axons[uid] for uid in miner_uids],
-            synapse=synapse,  # send in the execution trace
+            synapse=challenge.synapse(),  # send in the execution trace
             deserialize=False,  # bogus responses shouldn't kill the validation flow
             timeout=timeout,
         )
 
-        proofs = [item.deserialize() for item in responses]
-
-        # proofs should be fairly small, so we can log then
-        bt.logging.info(f"Received responses. {proofs}")
-
         # Adjust the scores based on responses from miners.
-        rewards = self.get_rewards(proof, proofs, timeout)
+        rewards = self.get_rewards(challenge.truth(), responses, timeout)
         bt.logging.info(f"Scored responses: {rewards}")
 
         # Update the scores based on the rewards. You may want to define your own update_scores function for custom behavior.
         self.update_scores(rewards, miner_uids)
-
-
-# it's sufficient for us to check exact matches between proof bytes and pub inputs bytes.
-# verifying the proof would be redundant at this stage, but a later update would likely make
-# it more sensible to opt for proof verification instead of byte matching
-def reward(
-    proof_bytes: bytes,
-    response_proof: bytes,
-    response_process_time: float,
-    min_process_time: float,
-    timeout: float,
-) -> float:
-    if response_process_time > timeout:
-        return 0.0
-
-    if proof_bytes != response_proof:
-        return 0.0
-
-    time_off_from_min = response_process_time - min_process_time
-    max_time = timeout - min_process_time
-    return 1.0 - time_off_from_min / max_time
 
 
 # The main function parses the configuration and runs the validator.

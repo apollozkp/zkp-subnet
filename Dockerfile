@@ -74,6 +74,7 @@ COPY /README.md /
 RUN python3 -m pip install --upgrade pip
 RUN python3 -m pip install -e .
 RUN python3 -m pip install -r /requirements.txt
+# RUN python3 -m pip install --upgrade bittensor
 
 # Setup wallets
 ARG WALLET=owner
@@ -86,6 +87,7 @@ RUN btcli wallet new_coldkey --wallet.name $MINER --no_password --no_prompt
 RUN btcli wallet new_hotkey --wallet.name $MINER --wallet.hotkey default --no_prompt
 RUN btcli wallet new_coldkey --wallet.name $VALIDATOR --no_password --no_prompt
 RUN btcli wallet new_hotkey --wallet.name $VALIDATOR --wallet.hotkey default --no_prompt
+
 
 # Copy setup scripts
 COPY /scripts/localnet_setup.sh /usr/local/bin/

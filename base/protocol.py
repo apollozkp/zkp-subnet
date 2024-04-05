@@ -15,10 +15,10 @@
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
+from typing import List
+
 import bittensor as bt
 from pydantic import Field
-
-from typing import List
 
 
 class Commit(bt.Synapse):
@@ -33,11 +33,14 @@ class Commit(bt.Synapse):
         allow_mutation=False,
     )
     commitment: str = Field(
-        ...,
         title="Commitment",
         description="The commitment to the polynomial.",
         allow_mutation=True,
+        default="",
     )
+
+    def deserialize(self):
+        return self
 
 
 class Open(bt.Synapse):
@@ -45,10 +48,10 @@ class Open(bt.Synapse):
     A protocol for proving KZG commitments.
     """
 
-    commitment: str = Field(
+    poly: List[str] = Field(
         ...,
-        title="Commitment",
-        description="The commitment to prove.",
+        title="Polynomial",
+        description="The polynomial to prove.",
         allow_mutation=False,
     )
     x: str = Field(
@@ -59,11 +62,14 @@ class Open(bt.Synapse):
     )
 
     proof: str = Field(
-        ...,
         title="Proof",
         description="The proof of the commitment.",
         allow_mutation=True,
+        default="",
     )
+
+    def deserialize(self):
+        return self
 
 
 class Verify(bt.Synapse):
@@ -94,8 +100,12 @@ class Verify(bt.Synapse):
     )
 
     valid: bool = Field(
-        ...,
         title="Valid",
         description="Whether the proof is valid.",
         allow_mutation=False,
+        default=False,
     )
+
+    def deserialize(self):
+        return self
+

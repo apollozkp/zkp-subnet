@@ -26,20 +26,6 @@ from base.miner import BaseMinerNeuron
 from base.protocol import Commit, Open, Verify
 
 
-class ClientConfig:
-    def __init__(self, host: str = "127.0.0.1", port: int = 1337):
-        self.host = host
-        self.port = port
-
-
-class MinerConfig:
-    def __init__(self):
-        self.client_config = ClientConfig()
-
-    def __str__(self):
-        return str(self.__dict__)
-
-
 class Miner(BaseMinerNeuron):
     """
     Miner class for the ZKG network.
@@ -53,10 +39,28 @@ class Miner(BaseMinerNeuron):
         super(Miner, self).__init__(config=config)
 
         # Start the local ZKG RPC server.
-        self.client = Client()
+        PORT = 1337
+        self.client = Client(port=PORT)
         self.client.start()
 
-    # TODO: split blacklist for each request type?
+        self.axon.attach(
+            forward_fn=self.commit_polynomial,
+            priority_fn=self.commit_polynomial_priority,
+            blacklist_fn=self.commit_polynomial_blacklist,
+        ).attach(
+            forward_fn=self.open_polynomial,
+            priority_fn=self.open_polynomial_priority,
+            blacklist_fn=self.open_polynomial_blacklist,
+        ).attach(
+            forward_fn=self.verify_proof,
+            priority_fn=self.verify_proof_priority,
+            blacklist_fn=self.verify_proof_blacklist,
+        )
+
+    async def forward(self, synapse: bt.Synapse) -> bt.Synapse:
+        bt.logging.info("Received synapse on forward", synapse)
+        pass
+
     async def blacklist(self, synapse: bt.Synapse) -> typing.Tuple[bool, str]:
         """
         Check if the hotkey is blacklisted.
@@ -67,18 +71,17 @@ class Miner(BaseMinerNeuron):
                 f"Not Blacklisting recognized hotkey {synapse.dendrite.hotkey} with uid"
                 f" {uid}"
             )
-            return False, "Hotkey recognized!"
+            return False, ""
         except Exception:
             if self.config.blacklist.allow_non_registered:
-                return False, "Allowing unregistered hotkey"
+                return False
             else:
                 bt.logging.warning(
                     "Blacklisting a request from unregistered hotkey"
                     f" {synapse.dendrite.hotkey}"
                 )
-                return True, "Unrecognized hotkey"
+                return True, ""
 
-    # TODO: split priority for each request type?
     async def priority(self, synapse: bt.Synapse) -> float:
         """
         Get the priority of the hotkey.
@@ -94,47 +97,60 @@ class Miner(BaseMinerNeuron):
         )
         return priority
 
-    def commit(self, synapse: Commit) -> Commit:
+    async def commit_polynomial(self, synapse: Commit) -> Commit:
         """
         Query the connected ZKG RPC server (commit).
         """
+        bt.logging.info("Received synapse on commit", synapse)
         with self.client.commit(synapse.poly) as resp:
-            if resp.get("error"):
-                bt.log.error(f"Error committing: {resp.get('error')}")
-                return synapse
-            elif resp.get("result").get("commitment"):
-                synapse.commitment = resp.get("result").get("commitment")
-            else:
-                bt.log.error(f"Error committing: {resp}")
+            error = resp.json().get("error")
+            if error:
+                bt.log.error(f"Error committing: {error}")
+            synapse.commitment = resp.json().get("result").get("commitment", "")
+        bt.logging.info("Returning synapse", synapse)
         return synapse
 
-    def open(self, synapse: Open) -> Open:
+    async def open_polynomial(self, synapse: Open) -> Open:
         """
         Query the connected ZKG RPC server (open).
         """
-        with self.client.open(synapse.commitment, synapse.x) as resp:
-            if resp.get("error"):
-                bt.log.error(f"Error opening: {resp.get('error')}")
-                return synapse
-            elif resp.get("result").get("proof"):
-                synapse.proof = resp.get("result").get("proof")
-            else:
-                bt.log.error(f"Error opening: {resp}")
+        bt.logging.info("Received synapse on open", synapse)
+        with self.client.open(synapse.poly, synapse.x) as resp:
+            error = resp.json().get("error")
+            if error:
+                bt.log.error(f"Error opening: {error}")
+            synapse.proof = resp.json().get("result").get("proof", "")
         return synapse
 
-    def verify(self, synapse: Verify) -> Verify:
+    async def verify_proof(self, synapse: Verify) -> Verify:
         """
         Query the connected ZKG RPC server (verify).
         """
+        bt.logging.info("Received synapse on verify", synapse)
         with self.client.verify(synapse.commitment) as resp:
-            if resp.get("error"):
-                bt.log.error(f"Error verifying: {resp.get('error')}")
-                return synapse
-            elif resp.get("result").get("valid"):
-                synapse.valid = resp.get("result").get("valid")
-            else:
-                bt.log.error(f"Error verifying: {resp}")
+            error = resp.json().get("error")
+            if error:
+                bt.log.error(f"Error verifying: {error}")
+            synapse.valid = resp.json().get("result").get("valid", False)
         return synapse
+
+    async def commit_polynomial_blacklist(self, synapse: Commit) -> typing.Tuple[bool, str]:
+        return await self.blacklist(synapse)
+
+    async def commit_polynomial_priority(self, synapse: Commit) -> float:
+        return await self.priority(synapse)
+
+    async def open_polynomial_blacklist(self, synapse: Open) -> typing.Tuple[bool, str]:
+        return await self.blacklist(synapse)
+
+    async def open_polynomial_priority(self, synapse: Open) -> float:
+        return await self.priority(synapse)
+
+    async def verify_proof_blacklist(self, synapse: Verify) -> typing.Tuple[bool, str]:
+        return await self.blacklist(synapse)
+
+    async def verify_proof_priority(self, synapse: Verify) -> float:
+        return await self.priority(synapse)
 
 
 # This is the main function, which runs the miner.
