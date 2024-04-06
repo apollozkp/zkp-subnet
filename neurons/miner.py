@@ -23,7 +23,7 @@ from fourier import Client
 
 # import base miner class which takes care of most of the boilerplate
 from base.miner import BaseMinerNeuron
-from base.protocol import Commit, Open, Verify
+from base.protocol import Prove
 
 
 class Miner(BaseMinerNeuron):
@@ -39,15 +39,9 @@ class Miner(BaseMinerNeuron):
         # Start the local ZKG RPC server.
         PORT = 1337
         self.client = Client(port=PORT)
-        self.client.start()
+        self.client.start("prover")
 
-        self.axon.attach(
-            forward_fn=self.prove_polynomial,
-            priority_fn=self.priority,
-            blacklist_fn=self.blacklist,
-        )
-
-    async def blacklist(self, synapse: bt.Synapse) -> typing.Tuple[bool, str]:
+    async def blacklist(self, synapse: Prove) -> typing.Tuple[bool, str]:
         """
         Check if the hotkey is blacklisted.
         """
@@ -68,7 +62,7 @@ class Miner(BaseMinerNeuron):
                 )
                 return True, ""
 
-    async def priority(self, synapse: bt.Synapse) -> float:
+    async def priority(self, synapse: Prove) -> float:
         """
         Get the priority of the hotkey.
         """
@@ -83,7 +77,7 @@ class Miner(BaseMinerNeuron):
         )
         return priority
 
-    async def prove_polynomial(self, synapse: Prove) -> Prove:
+    async def forward(self, synapse: Prove) -> Prove:
         """
         Query the connected ZKG RPC server (prove).
         """

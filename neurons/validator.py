@@ -25,24 +25,11 @@ import torch
 from fourier import Client
 
 # Import forward dependencies.
-from base.protocol import Commit, Open, Verify
+from base.protocol import Prove
 
 # import base validator class which takes care of most of the boilerplate
 from base.validator import BaseValidatorNeuron
 from utils.uids import get_random_uids
-
-class Challenge:
-    def __init__(self, poly: str, x: str, y: str, commitment: str, proof: str):
-        self.poly = poly
-        self.x = x
-        self.y = y
-        self.commitment = commitment
-
-    def synapse(self):
-        return Open(
-            poly=self.poly,
-            x=self.x,
-        )
 
 class Validator(BaseValidatorNeuron):
     """
@@ -59,7 +46,16 @@ class Validator(BaseValidatorNeuron):
         # change port to 1338 so it doesn't conflict with the miner
         PORT = 1338
         self.client = Client(port=PORT)
-        self.client.start()
+        self.client.start("prover")
+
+    def rpc_random_poly(self, degree: int) -> str:
+        with self.client.random_poly(degree) as response:
+            if response.status_code != 200:
+                bt.logging.error(
+                    f"RPC request failed with status: {response.status_code}"
+                )
+                raise Exception("Failed to generate a random polynomial.")
+            return response.json().get("result", {}).get("poly")
 
     def rpc_verify(self, proof: str, x: str, y: str, commitment: str) -> bool:
         with self.client.verify(proof, x, y, commitment) as response:
@@ -70,7 +66,7 @@ class Validator(BaseValidatorNeuron):
                 raise Exception("Failed to verify the proof.")
             return response.json().get("result", {}).get("valid")
 
-    async def generate_challenge(self) -> Prove:
+    def generate_challenge(self) -> Prove:
         """
         Generate a challenge for the miners to solve.
         """
@@ -84,13 +80,13 @@ class Validator(BaseValidatorNeuron):
         bt.logging.debug("Sleeping for 5 seconds...")
         time.sleep(5)
         try:
-            challenge = await self.generate_challenge()
+            challenge = self.generate_challenge()
             await self.query(challenge)
         except Exception as e:
             bt.logging.error(f"Failed to generate and query challenge: {e}")
             bt.logging.error("Retrying in 5 seconds...")
 
-    def reward(self, response: Prove, response_process_time: float, min_process_times: float, timeout: float) -> float:
+    def reward(self, response: Prove, response_process_time: float, min_process_time: float, timeout: float) -> float:
         """
         Calculate the miner reward based on correctness and processing time.
         """
@@ -122,19 +118,19 @@ class Validator(BaseValidatorNeuron):
 
     def get_rewards(
         self,
-        challenge: Verify,
-        responses: List[Open],
+        responses: List[Tuple[Prove, float]],
         timeout: float,
     ) -> torch.FloatTensor:
         """
         Calculate the miner rewards based on correctness and processing time.
         """
-        # How to get the processing time?
+        # Get the fastest processing time.
+        min_process_time = min([response[1] for response in responses])
         return torch.FloatTensor(
-            [self.reward(challenge, response, timeout) for response in responses]
+            [self.reward(response[0], response[1], min_process_time, timeout) for response in responses]
         ).to(self.device)
 
-    async def query(self, challenge: Challenge) -> torch.FloatTensor:
+    async def query(self, challenge: Prove) -> torch.FloatTensor:
         """
         Query the connected miners with a challenge
         """
@@ -144,13 +140,15 @@ class Validator(BaseValidatorNeuron):
         timeout = 10
         responses = await self.dendrite(
             axons=[self.metagraph.axons[uid] for uid in miner_uids],
-            synapse=self.generate_challenge(),
+            synapse=challenge,
             deserialize=False,  # bogus responses shouldn't kill the validation flow
             timeout=timeout,
         )
 
+        responses = [(resp, resp.dendrite.process_time) for resp in responses]
+
         # Adjust the scores based on responses from miners.
-        rewards = self.get_rewards(challenge.truth(), responses, timeout)
+        rewards = self.get_rewards(responses, timeout)
         bt.logging.info(f"Scored responses: {rewards}")
 
         # Update the scores based on the rewards. You may want to define your own update_scores function for custom behavior.
