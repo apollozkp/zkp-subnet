@@ -140,6 +140,11 @@ class Validator(BaseValidatorNeuron):
             timeout=timeout,
         )
 
+        # Empty responses shouldn't be used for min_process_time.
+        for resp in responses:
+            if resp.commitment is None or resp.x is None or resp.y is None or resp.proof is None:
+                resp.dendrite.process_time = resp.dendrite.process_time + timeout
+
         responses = [(resp, resp.dendrite.process_time) for resp in responses]
 
         # Adjust the scores based on responses from miners.
