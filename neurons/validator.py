@@ -78,7 +78,7 @@ class Validator(BaseValidatorNeuron):
             challenge = self.generate_challenge()
             await self.query(challenge)
         except Exception as e:
-            bt.logging.error(f"Failed to generate and query challenge: {e}")
+            bt.logging.error(f"Failed to generate an query challenge: {e}")
             bt.logging.error("Retrying in 5 seconds...")
 
     def reward(self, response: Prove, response_process_time: float, min_process_time: float, timeout: float) -> float:
