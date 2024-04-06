@@ -15,35 +15,12 @@
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
-from typing import List
+from typing import List, Optional
 
 import bittensor as bt
 from pydantic import Field
 
-
-class Commit(bt.Synapse):
-    """
-    A protocol for handling KZG commitments.
-    """
-
-    poly: List[str] = Field(
-        ...,
-        title="Polynomial",
-        description="The polynomial to commit to.",
-        allow_mutation=False,
-    )
-    commitment: str = Field(
-        title="Commitment",
-        description="The commitment to the polynomial.",
-        allow_mutation=True,
-        default="",
-    )
-
-    def deserialize(self):
-        return self
-
-
-class Open(bt.Synapse):
+class Prove(bt.Synapse):
     """
     A protocol for proving KZG commitments.
     """
@@ -54,56 +31,26 @@ class Open(bt.Synapse):
         description="The polynomial to prove.",
         allow_mutation=False,
     )
-    x: str = Field(
-        ...,
-        title="Input",
-        description="The input to evaluate the polynomial at.",
-        allow_mutation=False,
+    commitment: Optional[str] = Field(
+        ..., title="Commitment", description="The commitment to the polynomial."
     )
-
-    proof: str = Field(
-        title="Proof",
-        description="The proof of the commitment.",
-        allow_mutation=True,
-        default="",
-    )
-
-    def deserialize(self):
-        return self
-
-
-class Verify(bt.Synapse):
-    """
-    A protocol for verifying KZG commitments.
-    """
-
-    commitment: str = Field(
-        ..., title="Commitment", description="The commitment to verify."
-    )
-    y: str = Field(
+    y: Optional[str] = Field(
         ...,
         title="Output",
         description="The output of the polynomial at x.",
         allow_mutation=False,
     )
-    x: str = Field(
+    x: Optional[str] = Field(
         ...,
         title="Input",
         description="The input to evaluate the polynomial at.",
         allow_mutation=False,
     )
-    proof: str = Field(
+    proof: Optional[str] = Field(
         ...,
         title="Proof",
         description="The proof of the commitment.",
         allow_mutation=False,
-    )
-
-    valid: bool = Field(
-        title="Valid",
-        description="Whether the proof is valid.",
-        allow_mutation=False,
-        default=False,
     )
 
     def deserialize(self):
