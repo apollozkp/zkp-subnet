@@ -1,4 +1,4 @@
-bittensor
-torch
-cairo-lang
-pytest-cov
+bittensor==6.9.3
+torch==1.13.1
+pytest-cov==5.0.0
+fourier @ git+https://github.com/apollozkp/fourier.git

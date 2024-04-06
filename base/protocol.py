@@ -15,14 +15,41 @@
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
-import typing
-import base64
+from typing import List, Optional
+
 import bittensor as bt
+from pydantic import Field
 
-class Trace(bt.Synapse):
-    main_trace: str
-    pub_inputs: str
-    proof: typing.Optional[str] = None
+class Prove(bt.Synapse):
+    """
+    A protocol for proving KZG commitments.
+    """
 
-    def deserialize(self) -> bytes:
-        return base64.b64decode(self.proof)
+    poly: List[str] = Field(
+        ...,
+        title="Polynomial",
+        description="The polynomial to prove.",
+        allow_mutation=False,
+    )
+    commitment: Optional[str] = Field(
+        title="Commitment", description="The commitment to the polynomial.", default=None,
+    )
+    y: Optional[str] = Field(
+        title="Output",
+        description="The output of the polynomial at x.",
+        default=None,
+    )
+    x: Optional[str] = Field(
+        title="Input",
+        description="The input to evaluate the polynomial at.",
+        default=None,
+    )
+    proof: Optional[str] = Field(
+        title="Proof",
+        description="The proof of the commitment.",
+        default=None,
+    )
+
+    def deserialize(self):
+        return self
+

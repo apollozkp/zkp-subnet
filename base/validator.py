@@ -30,6 +30,7 @@ from base.neuron import BaseNeuron
 from utils.config import add_validator_args
 from base.mock import MockDendrite
 
+from fourier import Client
 
 class BaseValidatorNeuron(BaseNeuron):
     """
@@ -73,6 +74,11 @@ class BaseValidatorNeuron(BaseNeuron):
 
         # Create asyncio event loop to manage async tasks.
         self.loop = asyncio.get_event_loop()
+
+        # change port to 1338 so it doesn't conflict with the miner
+        PORT = 1338
+        self.client = Client(port=PORT)
+        self.client.start(self.config.prover_path)
 
         # Instantiate runners
         self.should_exit: bool = False
@@ -157,6 +163,7 @@ class BaseValidatorNeuron(BaseNeuron):
             # If someone intentionally stops the validator, it'll safely terminate operations.
             except KeyboardInterrupt:
                 self.axon.stop()
+                self.client.stop()
                 bt.logging.success("Validator killed by keyboard interrupt.")
                 exit()
 
@@ -185,6 +192,7 @@ class BaseValidatorNeuron(BaseNeuron):
         Stops the validator's operations that are running in the background thread.
         """
         if self.is_running:
+            self.client.stop()
             bt.logging.debug("Stopping validator in background thread.")
             self.should_exit = True
             self.thread.join(5)

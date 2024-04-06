@@ -17,87 +17,143 @@
 
 
 import time
-import torch
 from typing import List, Tuple
 
 # Bittensor
 import bittensor as bt
+import torch
+
+# Import forward dependencies.
+from base.protocol import Prove
 
 # import base validator class which takes care of most of the boilerplate
 from base.validator import BaseValidatorNeuron
-
-# Import forward dependencies.
-from base.protocol import Trace
-from utils.cairo_generator import generate_random_cairo_trace
 from utils.uids import get_random_uids
 
 class Validator(BaseValidatorNeuron):
+    """
+    Validator class for the ZKG network.
+    The validator handles the following tasks:
+    - challenge: Generate a challenge for the miners to solve.
+    - verify: Verifies proofs generated on challenges by miners.
+    """
+
     def __init__(self, config=None):
         super(Validator, self).__init__(config=config)
         bt.logging.info("load_state()")
         self.load_state()
 
+    def rpc_random_poly(self, degree: int) -> str:
+        with self.client.random_poly(degree) as response:
+            if response.status_code != 200:
+                bt.logging.error(
+                    f"RPC request failed with status: {response.status_code}"
+                )
+                raise Exception("Failed to generate a random polynomial.")
+            return response.json().get("result", {}).get("poly")
+
+    def rpc_verify(self, proof: str, x: str, y: str, commitment: str) -> bool:
+        with self.client.verify(proof, x, y, commitment) as response:
+            if response.status_code != 200:
+                bt.logging.error(
+                    f"RPC request failed with status: {response.status_code}"
+                )
+                raise Exception("Failed to verify the proof.")
+            return response.json().get("result", {}).get("valid")
+
+    def generate_challenge(self) -> Prove:
+        """
+        Generate a challenge for the miners to solve.
+        """
+
+        # Generate a random polynomial.
+        DEGREE = 10
+        poly = self.rpc_random_poly(DEGREE)
+        return Prove(poly=poly)
+
     async def forward(self):
-        # For completeness, validators also need to generate proofs to ensure that miners are generating
-        # proofs of the given trace, rather than just creating any random garbage proof that will pass
-        # verification.
-        trace, proof_bytes = generate_random_cairo_trace()
-        await query(self, trace, proof_bytes)
+        bt.logging.debug("Sleeping for 5 seconds...")
+        time.sleep(5)
+        try:
+            challenge = self.generate_challenge()
+            await self.query(challenge)
+        except Exception as e:
+            bt.logging.error(f"Failed to generate a query challenge: {e}")
+            bt.logging.error("Retrying in 5 seconds...")
+
+    def reward(self, response: Prove, response_process_time: float, min_process_time: float, timeout: float) -> float:
+        """
+        Calculate the miner reward based on correctness and processing time.
+        """
+
+        # Don't bother verifying if we don't have all info
+        if response.commitment is None or response.y is None or response.x is None or response.proof is None:
+            bt.logging.warning("Received incomplete proof.")
+            return 0.0
+
+        # Don't even bother spending resources on verifying if the synapse came in too late
+        if response_process_time > timeout:
+            bt.logging.warning("Received proof which was too slow.")
+            return 0.0
+
+        valid = self.rpc_verify(
+            proof=response.proof,
+            x=response.x,
+            y=response.y,
+            commitment=response.commitment,
+        )
+
+        if not valid:
+            bt.logging.warning("Invalid proof.")
+            return 0.0
+
+        time_off_from_min = response_process_time - min_process_time
+        max_time = timeout - min_process_time
+        return 1.0 - time_off_from_min / max_time
 
     def get_rewards(
         self,
-        proof_bytes: bytes,
-        responses: List[Tuple[bytes, float]],
+        responses: List[Tuple[Prove, float]],
         timeout: float,
     ) -> torch.FloatTensor:
+        """
+        Calculate the miner rewards based on correctness and processing time.
+        """
         # Get the fastest processing time.
         min_process_time = min([response[1] for response in responses])
         return torch.FloatTensor(
-            [reward(proof_bytes, response[0], response[1], min_process_time, timeout) for response in responses]
+            [self.reward(response[0], response[1], min_process_time, timeout) for response in responses]
         ).to(self.device)
 
-async def query(self, trace: Trace, proof_bytes: bytes) -> torch.FloatTensor:
-    miner_uids = get_random_uids(self, k=min(self.config.neuron.sample_size, self.metagraph.n.item()))
-    timeout = 10
-    responses = await self.dendrite(
-        axons=[self.metagraph.axons[uid] for uid in miner_uids],
-        synapse=trace, # send in the execution trace
-        deserialize=False, # bogus responses shouldn't kill the validation flow
-        timeout=timeout,
-    )
+    async def query(self, challenge: Prove) -> torch.FloatTensor:
+        """
+        Query the connected miners with a challenge
+        """
+        miner_uids = get_random_uids(
+            self, k=min(self.config.neuron.sample_size, self.metagraph.n.item())
+        )
+        timeout = 10
+        responses = await self.dendrite(
+            axons=[self.metagraph.axons[uid] for uid in miner_uids],
+            synapse=challenge,
+            deserialize=False,  # bogus responses shouldn't kill the validation flow
+            timeout=timeout,
+        )
 
-    def try_deserialize(item: Trace):
-        try:
-            return item.deserialize(), item.dendrite.process_time
-        except:
-            return bytes(), timeout + 1.0
+        # Empty responses shouldn't be used for min_process_time.
+        for resp in responses:
+            if resp.commitment is None or resp.x is None or resp.y is None or resp.proof is None:
+                resp.dendrite.process_time = timeout + 1.0
 
-    responses = [try_deserialize(item) for item in responses]
+        responses = [(resp, resp.dendrite.process_time) for resp in responses]
 
-    # Log the results for monitoring purposes. We don't log the actual response since
-    # proofs are enormous and it would pollute the logs.
-    bt.logging.info(f"Received responses.")
+        # Adjust the scores based on responses from miners.
+        rewards = self.get_rewards(responses, timeout)
+        bt.logging.info(f"Scored responses: {rewards}")
 
-    # Adjust the scores based on responses from miners.
-    rewards = self.get_rewards(proof_bytes, responses, timeout)
-    bt.logging.info(f"Scored responses: {rewards}")
+        # Update the scores based on the rewards. You may want to define your own update_scores function for custom behavior.
+        self.update_scores(rewards, miner_uids)
 
-    # Update the scores based on the rewards. You may want to define your own update_scores function for custom behavior.
-    self.update_scores(rewards, miner_uids)
-
-# it's sufficient for us to check exact matches between proof bytes and pub inputs bytes.
-# verifying the proof would be redundant at this stage, but a later update would likely make
-# it more sensible to opt for proof verification instead of byte matching
-def reward(proof_bytes: bytes, response_proof: bytes, response_process_time: float, min_process_time: float, timeout: float) -> float:
-    if response_process_time > timeout:
-        return 0.0
-
-    if proof_bytes != response_proof:
-        return 0.0
-
-    time_off_from_min = response_process_time - min_process_time
-    max_time = timeout - min_process_time
-    return 1.0 - time_off_from_min / max_time
 
 # The main function parses the configuration and runs the validator.
 if __name__ == "__main__":

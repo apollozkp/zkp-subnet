@@ -16,8 +16,10 @@
 # DEALINGS IN THE SOFTWARE.
 
 import pytest
-from neurons.validator import Validator, reward, query
-from base.protocol import Trace
+
+from base.protocol import Prove
+from neurons.validator import Validator
+
 
 @pytest.fixture(scope="module")
 def setup_validator():
@@ -34,24 +36,72 @@ def setup_validator():
     validator.subtensor.reset()
     validator.stop_run_thread()
 
-@pytest.mark.parametrize("proof_bytes,response_proof,response_process_time,min_process_time,timeout,expected_value", [
-    (bytes("hi", "utf-8"), bytes("hi", "utf-8"), 2.6, 2.6, 10.0, 1.0),
-    (bytes("hi", "utf-8"), bytes("hello", "utf-8"), 2.6, 2.6, 10.0, 0.0),
-    (bytes("hi", "utf-8"), bytes("hi", "utf-8"), 11.6, 2.6, 10.0, 0.0),
-    (bytes("hi", "utf-8"), bytes("hi", "utf-8"), 7.5, 5.0, 10.0, 0.5),
-])
-def test_reward(proof_bytes, response_proof, response_process_time, min_process_time, timeout, expected_value):
-    assert reward(proof_bytes, response_proof, response_process_time, min_process_time, timeout) == expected_value
+
+@pytest.mark.parametrize(
+    "missing_info,too_late,invalid_proof,half_time,expected_value",
+    [
+        (False, False, False, False, 1.0),
+        (True, False, False, False, 0.0),
+        (False, True, False, False, 0.0),
+        (False, False, True, False, 0.0),
+        (False, False, False, True, 0.5),
+    ],
+)
+def test_reward(
+    setup_validator,
+    missing_info,
+    too_late,
+    invalid_proof,
+    half_time,
+    expected_value,
+):
+    validator = setup_validator
+    challenge = make_proof(validator)
+
+    response_process_time = 0.0
+    min_process_time = 0.0
+    timeout = 10.0
+
+    if missing_info:
+        challenge.commitment = None
+
+    if too_late: 
+        response_process_time = 11.0
+
+    if invalid_proof:
+        challenge.y = "ea"
+
+    if half_time:
+        response_process_time = 5.0
+
+    assert(
+        validator.reward(
+            challenge,
+            response_process_time,
+            min_process_time,
+            timeout,
+        )
+        == expected_value
+    )
+
 
 @pytest.mark.asyncio
-async def test_validator_forward(compile_prover_lib, setup_validator):
-    compiled_path = compile_prover_lib
+async def test_validator_forward(setup_validator):
     validator = setup_validator
+    
+    proof = make_proof(validator)
 
-    bogus_trace = Trace(main_trace="hello", pub_inputs="world")
-    response = bytes("abc", "utf-8")
-
-    await query(validator, bogus_trace, response)
-
+    await validator.query(proof)
+    
     for score in validator.scores:
         assert score > 0.0
+
+def make_proof(validator):
+    challenge = validator.generate_challenge()
+    resp = validator.client.prove(challenge.poly)
+    assert resp.status_code == 200
+    challenge.commitment = resp.json().get("result").get("commitment", "")
+    challenge.y = resp.json().get("result").get("y", "")
+    challenge.x = resp.json().get("result").get("x", "")
+    challenge.proof = resp.json().get("result").get("proof", "")
+    return challenge

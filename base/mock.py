@@ -92,7 +92,6 @@ class MockDendrite(bt.dendrite):
                 process_time = random.random()
                 if process_time < timeout:
                     s.dendrite.process_time = str(time.time() - start_time)
-                    s.proof = base64.b64encode(bytes("abc", "utf-8"))
                     s.dendrite.status_code = 200
                     s.dendrite.status_message = "OK"
                     synapse.dendrite.process_time = str(process_time)

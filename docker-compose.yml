@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+  localnet:
+    network_mode: "host"
+    image: localnet
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: localnet
+    ports:
+      - "9946:9946"
+      - "9947:9947"
+      - "30334:30334"
+      - "30335:30335"
+      - "9934:9934"
+      - "9935:9935"
+    expose:
+      - "9946"
+      - "9947"
+      - "30333"
+      - "30334"
+      - "9933"
+      - "9934"
+    volumes:
+      - localnet-volume:/tmp/blockchain
+    command:
+      - /bin/bash
+      - -c
+      - localnet_setup.sh
+
+  validator:
+    network_mode: "host"
+    image: localnet
+    volumes:
+      - validator-volume:/tmp/blockchain
+    command:
+      - /bin/bash
+      - -c
+      - validator_setup.sh
+
+  miner:
+    network_mode: "host"
+    image: localnet
+    volumes:
+      - miner-volume:/tmp/blockchain
+    command:
+      - /bin/bash
+      - -c
+      - miner_setup.sh
+
+volumes:
+  localnet-volume:
+  miner-volume:
+  validator-volume:
+

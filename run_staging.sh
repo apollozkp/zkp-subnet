@@ -45,7 +45,7 @@ setup_environment() {
         git clone https://github.com/opentensor/subtensor.git
     fi
     cd subtensor
-    git pull
+    git checkout main
 
     # Update to the nightly version of rust
     ./scripts/init.sh

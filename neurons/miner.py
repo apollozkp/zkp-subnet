@@ -17,46 +17,49 @@
 
 import time
 import typing
-import base64
-import bittensor as bt
 
-import base
+import bittensor as bt
 
 # import base miner class which takes care of most of the boilerplate
 from base.miner import BaseMinerNeuron
-from utils.rust import make_proof
+from base.protocol import Prove
 
-from utils.cairo_generator import LIB_PATH
 
 class Miner(BaseMinerNeuron):
+    """
+    Miner class for the ZKG network.
+    The miner handles the following tasks:
+    - prove: Commits to a polynomial and computes an opening proof of it.
+    """
+
     def __init__(self, config=None):
         super(Miner, self).__init__(config=config)
 
-    async def forward(
-        self, synapse: base.protocol.Trace
-    ) -> base.protocol.Trace:
-        bt.logging.info("Circuit received, generating proof...")
-        return forward(synapse)
-
-    async def blacklist(
-        self, synapse: base.protocol.Trace
-    ) -> typing.Tuple[bool, str]:
+    async def blacklist(self, synapse: Prove) -> typing.Tuple[bool, str]:
+        """
+        Check if the hotkey is blacklisted.
+        """
         try:
             uid = self.metagraph.hotkeys.index(synapse.dendrite.hotkey)
             bt.logging.trace(
-                f"Not Blacklisting recognized hotkey {synapse.dendrite.hotkey}"
+                f"Not Blacklisting recognized hotkey {synapse.dendrite.hotkey} with uid"
+                f" {uid}"
             )
             return False, "Hotkey recognized!"
-        except:
+        except Exception:
             if self.config.blacklist.allow_non_registered:
                 return False, "Allowing unregistered hotkey"
             else:
                 bt.logging.warning(
-                    f"Blacklisting a request from unregistered hotkey {synapse.dendrite.hotkey}"
+                    "Blacklisting a request from unregistered hotkey"
+                    f" {synapse.dendrite.hotkey}"
                 )
                 return True, "Unrecognized hotkey"
 
-    async def priority(self, synapse: base.protocol.Trace) -> float:
+    async def priority(self, synapse: Prove) -> float:
+        """
+        Get the priority of the hotkey.
+        """
         caller_uid = self.metagraph.hotkeys.index(
             synapse.dendrite.hotkey
         )  # Get the caller index.
@@ -68,21 +71,22 @@ class Miner(BaseMinerNeuron):
         )
         return priority
 
-def forward(synapse: base.protocol.Trace, lib_path: str=LIB_PATH) -> base.protocol.Trace:
-    # Decode the strings to bytes for Rust.
-    main_trace = base64.b64decode(synapse.main_trace)
-    pub_inputs = base64.b64decode(synapse.pub_inputs)
-
-    # Generate the actual proof.
-    proof = make_proof(main_trace, pub_inputs, lib_path)
-
-    # And re-encode back to base64 strings; because Python apparently doesn't know that JSON
-    # can just take byte arrays, and so we have to coddle it :)
-    proof = base64.b64encode(proof)
-
-    synapse.proof = proof
-    bt.logging.info("Proof generated.")
-    return synapse
+    def forward(self, synapse: Prove) -> Prove:
+        """
+        Query the connected ZKG RPC server (prove).
+        """
+        bt.logging.info("Received synapse on prove", synapse)
+        with self.client.prove(synapse.poly) as resp:
+            error = resp.json().get("error")
+            if error:
+                bt.log.error(f"Error proving: {error}")
+            else:
+                synapse.commitment = resp.json().get("result").get("commitment", "")
+                synapse.y = resp.json().get("result").get("y", "")
+                synapse.x = resp.json().get("result").get("x", "")
+                synapse.proof = resp.json().get("result").get("proof", "")
+        bt.logging.info("Returning synapse", synapse)
+        return synapse
 
 # This is the main function, which runs the miner.
 if __name__ == "__main__":
