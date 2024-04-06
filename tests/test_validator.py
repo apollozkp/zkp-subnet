@@ -38,27 +38,45 @@ def setup_validator():
 
 
 @pytest.mark.parametrize(
-    "proof_bytes,response_proof,response_process_time,min_process_time,timeout,expected_value",
+    "missing_info,too_late,invalid_proof,half_time,expected_value",
     [
-        (bytes("hi", "utf-8"), bytes("hi", "utf-8"), 2.6, 2.6, 10.0, 1.0),
-        (bytes("hi", "utf-8"), bytes("hello", "utf-8"), 2.6, 2.6, 10.0, 0.0),
-        (bytes("hi", "utf-8"), bytes("hi", "utf-8"), 11.6, 2.6, 10.0, 0.0),
-        (bytes("hi", "utf-8"), bytes("hi", "utf-8"), 7.5, 5.0, 10.0, 0.5),
+        (False, False, False, False, 1.0),
+        (True, False, False, False, 0.0),
+        (False, True, False, False, 0.0),
+        (False, False, True, False, 0.0),
+        (False, False, False, True, 0.5),
     ],
 )
 def test_reward(
-    proof_bytes,
-    response_proof,
-    response_process_time,
-    min_process_time,
-    timeout,
+    setup_validator,
+    missing_info,
+    too_late,
+    invalid_proof,
+    half_time,
     expected_value,
 ):
     validator = setup_validator
+    challenge = make_proof(validator)
+
+    response_process_time = 0.0
+    min_process_time = 0.0
+    timeout = 10.0
+
+    if missing_info:
+        challenge.commitment = None
+
+    if too_late: 
+        response_process_time = 11.0
+
+    if invalid_proof:
+        challenge.y = "ea"
+
+    if half_time:
+        response_process_time = 5.0
+
     assert(
         validator.reward(
-            proof_bytes,
-            response_proof,
+            challenge,
             response_process_time,
             min_process_time,
             timeout,
@@ -68,13 +86,22 @@ def test_reward(
 
 
 @pytest.mark.asyncio
-async def test_validator_forward(compile_prover_lib, setup_validator):
+async def test_validator_forward(setup_validator):
     validator = setup_validator
     
-    poly = ["123", "456"]
-    bogus_prove = Prove(poly=poly)
-    
-    await validator.query(bogus_prove)
+    proof = make_proof(validator)
+
+    await validator.query(proof)
     
     for score in validator.scores:
         assert score > 0.0
+
+def make_proof(validator):
+    challenge = validator.generate_challenge()
+    resp = validator.client.prove(challenge.poly)
+    assert resp.status_code == 200
+    challenge.commitment = resp.json().get("result").get("commitment", "")
+    challenge.y = resp.json().get("result").get("y", "")
+    challenge.x = resp.json().get("result").get("x", "")
+    challenge.proof = resp.json().get("result").get("proof", "")
+    return challenge

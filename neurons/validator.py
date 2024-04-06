@@ -69,7 +69,7 @@ class Validator(BaseValidatorNeuron):
         # Generate a random polynomial.
         DEGREE = 10
         poly = self.rpc_random_poly(DEGREE)
-        return Prove(poly)
+        return Prove(poly=poly)
 
     async def forward(self):
         bt.logging.debug("Sleeping for 5 seconds...")

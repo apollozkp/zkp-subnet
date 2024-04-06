@@ -71,7 +71,7 @@ class Miner(BaseMinerNeuron):
         )
         return priority
 
-    async def forward(self, synapse: Prove) -> Prove:
+    def forward(self, synapse: Prove) -> Prove:
         """
         Query the connected ZKG RPC server (prove).
         """

@@ -39,7 +39,7 @@ def setup_miner():
 
 
 @pytest.mark.parametrize("n", [10, 100, 1000])
-def test_miner_forward(compile_prover_lib, n):
+def test_miner_forward(compile_prover_lib, setup_miner, n):
     compiled_path = compile_prover_lib
     miner = setup_miner
     response = miner.client.random_poly(10)
