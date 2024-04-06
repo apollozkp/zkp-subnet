@@ -1,4 +1,4 @@
 bittensor==6.9.3
 torch==1.13.1
-pytest-cov==2.11.1
-git+https://github.com/apollozkp/fourier.git
+pytest-cov==5.0.0
+fourier @ git+https://github.com/apollozkp/fourier.git
