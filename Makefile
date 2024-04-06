@@ -14,10 +14,10 @@ clean:
 	@touch .ensure-deps
 
 prover: .ensure-deps 
-	rm -rf lambdaworks # remove in case of a failed build
-	git clone https://github.com/apollozkp/lambdaworks
-	cd lambdaworks && . "$$HOME/.cargo/env" && cargo build --release && mv target/release/libcairo_platinum_prover.so ../prover
-	rm -rf lambdaworks
+	rm -rf fourier # remove in case of a failed build
+	git clone https://github.com/apollozkp/fourier
+	cd fourier && . "$$HOME/.cargo/env" && cargo build --release && mv target/release/fourier.so ../prover
+	rm -rf fourier
 
 check-env:
 	@if [ -z "$${WALLET_NAME}" ]; then \
