@@ -18,7 +18,7 @@
 import pytest
 
 from base.protocol import Prove
-from neurons.validator import Validator, query, reward
+from neurons.validator import Validator
 
 
 @pytest.fixture(scope="module")
@@ -54,8 +54,9 @@ def test_reward(
     timeout,
     expected_value,
 ):
-    assert (
-        reward(
+    validator = setup_validator
+    assert(
+        validator.reward(
             proof_bytes,
             response_proof,
             response_process_time,
@@ -68,14 +69,12 @@ def test_reward(
 
 @pytest.mark.asyncio
 async def test_validator_forward(compile_prover_lib, setup_validator):
-    pass
-    # compiled_path = compile_prover_lib
-    # validator = setup_validator
-    #
-    # poly = ["123", "456"]
-    # bogus_commit = Commit(poly=poly)
-    #
-    # await query(validator, bogus_commit, response)
-    #
-    # for score in validator.scores:
-    #     assert score > 0.0
+    validator = setup_validator
+    
+    poly = ["123", "456"]
+    bogus_prove = Prove(poly=poly)
+    
+    await validator.query(bogus_prove)
+    
+    for score in validator.scores:
+        assert score > 0.0

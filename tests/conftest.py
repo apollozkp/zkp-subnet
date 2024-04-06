@@ -31,14 +31,16 @@ def compile_prover_lib():
     os.chdir("fourier")
     subprocess.check_call("cargo build --release", shell=True)
 
-    compiled_path = os.path.join("fourier", "target/release/fourier")
+    subprocess.check_call("mv target/release/fourier ../prover", shell=True)
     os.chdir("..")
-    yield compiled_path
+    subprocess.check_call("chmod u+x fourier", shell=True)
 
 @pytest.fixture(scope="session", autouse=True)
 def cleanup_env(request):
     def cleanup():
         if os.path.exists("fourier"):
             subprocess.check_call("rm -rf fourier", shell=True)
+        if os.path.exists("prover"):
+            subprocess.check_call("rm prover", shell=True)
 
     request.addfinalizer(cleanup)

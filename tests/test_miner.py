@@ -40,8 +40,15 @@ def setup_miner():
 
 @pytest.mark.parametrize("n", [10, 100, 1000])
 def test_miner_forward(compile_prover_lib, n):
-    pass
-
+    compiled_path = compile_prover_lib
+    miner = setup_miner
+    response = miner.client.random_poly(10)
+    assert response.status_code == 200
+    poly = Prove(poly=response.json().get("result", {}).get("poly"))
+    return_poly = miner.forward(poly)
+    resp = miner.client.verify(return_poly.proof, return_poly.x, return_poly.y, return_poly.commitment)
+    assert resp.status_code == 200
+    assert resp.json().get("result", {}).get("valid")
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
@@ -56,10 +63,10 @@ async def test_miner_blacklist(setup_miner, allow_non_registered, force_vpermit)
     miner.metagraph.validator_permit[uid] = force_vpermit
 
     poly = ["123", "456"]
-    synapse = Commit(poly=poly)
+    synapse = Prove(poly=poly)
     synapse.dendrite.hotkey = miner.wallet.hotkey.ss58_address
 
-    outside_synapse = Commit(poly=poly)
+    outside_synapse = Prove(poly=poly)
     outside_wallet = get_mock_wallet()
     outside_synapse.dendrite.hotkey = outside_wallet.hotkey.ss58_address
 
@@ -75,8 +82,7 @@ async def test_miner_blacklist(setup_miner, allow_non_registered, force_vpermit)
 
 @pytest.mark.asyncio
 async def test_miner_priority(setup_miner):
-    pass
-    # miner = setup_miner
-    # synapse = Trace(main_trace="a", pub_inputs="b")
-    # synapse.dendrite.hotkey = miner.wallet.hotkey.ss58_address
-    # assert await miner.priority(synapse) > 0
+    miner = setup_miner
+    synapse = Prove(poly=["a"])
+    synapse.dendrite.hotkey = miner.wallet.hotkey.ss58_address
+    assert await miner.priority(synapse) > 0
