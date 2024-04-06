@@ -30,9 +30,7 @@ class Miner(BaseMinerNeuron):
     """
     Miner class for the ZKG network.
     The miner handles the following tasks:
-    - commit: Compute the commitment of a polynomial.
-    - open: Compute the proof of a commitment.
-    - verify: Verify the proof of a commitment.
+    - prove: Commits to a polynomial and computes an opening proof of it.
     """
 
     def __init__(self, config=None):
@@ -44,22 +42,10 @@ class Miner(BaseMinerNeuron):
         self.client.start()
 
         self.axon.attach(
-            forward_fn=self.commit_polynomial,
-            priority_fn=self.commit_polynomial_priority,
-            blacklist_fn=self.commit_polynomial_blacklist,
-        ).attach(
-            forward_fn=self.open_polynomial,
-            priority_fn=self.open_polynomial_priority,
-            blacklist_fn=self.open_polynomial_blacklist,
-        ).attach(
-            forward_fn=self.verify_proof,
-            priority_fn=self.verify_proof_priority,
-            blacklist_fn=self.verify_proof_blacklist,
+            forward_fn=self.prove_polynomial,
+            priority_fn=self.priority,
+            blacklist_fn=self.blacklist,
         )
-
-    async def forward(self, synapse: bt.Synapse) -> bt.Synapse:
-        bt.logging.info("Received synapse on forward", synapse)
-        pass
 
     async def blacklist(self, synapse: bt.Synapse) -> typing.Tuple[bool, str]:
         """
@@ -97,60 +83,22 @@ class Miner(BaseMinerNeuron):
         )
         return priority
 
-    async def commit_polynomial(self, synapse: Commit) -> Commit:
+    async def prove_polynomial(self, synapse: Prove) -> Prove:
         """
-        Query the connected ZKG RPC server (commit).
+        Query the connected ZKG RPC server (prove).
         """
-        bt.logging.info("Received synapse on commit", synapse)
-        with self.client.commit(synapse.poly) as resp:
+        bt.logging.info("Received synapse on prove", synapse)
+        with self.client.prove(synapse.poly) as resp:
             error = resp.json().get("error")
             if error:
-                bt.log.error(f"Error committing: {error}")
-            synapse.commitment = resp.json().get("result").get("commitment", "")
+                bt.log.error(f"Error proving: {error}")
+            else:
+                synapse.commitment = resp.json().get("result").get("commitment", "")
+                synapse.y = resp.json().get("result").get("y", "")
+                synapse.x = resp.json().get("result").get("x", "")
+                synapse.proof = resp.json().get("result").get("proof", "")
         bt.logging.info("Returning synapse", synapse)
         return synapse
-
-    async def open_polynomial(self, synapse: Open) -> Open:
-        """
-        Query the connected ZKG RPC server (open).
-        """
-        bt.logging.info("Received synapse on open", synapse)
-        with self.client.open(synapse.poly, synapse.x) as resp:
-            error = resp.json().get("error")
-            if error:
-                bt.log.error(f"Error opening: {error}")
-            synapse.proof = resp.json().get("result").get("proof", "")
-        return synapse
-
-    async def verify_proof(self, synapse: Verify) -> Verify:
-        """
-        Query the connected ZKG RPC server (verify).
-        """
-        bt.logging.info("Received synapse on verify", synapse)
-        with self.client.verify(synapse.commitment) as resp:
-            error = resp.json().get("error")
-            if error:
-                bt.log.error(f"Error verifying: {error}")
-            synapse.valid = resp.json().get("result").get("valid", False)
-        return synapse
-
-    async def commit_polynomial_blacklist(self, synapse: Commit) -> typing.Tuple[bool, str]:
-        return await self.blacklist(synapse)
-
-    async def commit_polynomial_priority(self, synapse: Commit) -> float:
-        return await self.priority(synapse)
-
-    async def open_polynomial_blacklist(self, synapse: Open) -> typing.Tuple[bool, str]:
-        return await self.blacklist(synapse)
-
-    async def open_polynomial_priority(self, synapse: Open) -> float:
-        return await self.priority(synapse)
-
-    async def verify_proof_blacklist(self, synapse: Verify) -> typing.Tuple[bool, str]:
-        return await self.blacklist(synapse)
-
-    async def verify_proof_priority(self, synapse: Verify) -> float:
-        return await self.priority(synapse)
 
 # This is the main function, which runs the miner.
 if __name__ == "__main__":
