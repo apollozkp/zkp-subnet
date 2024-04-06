@@ -22,7 +22,6 @@ from typing import List, Tuple
 # Bittensor
 import bittensor as bt
 import torch
-from fourier import Client
 
 # Import forward dependencies.
 from base.protocol import Prove
@@ -43,10 +42,6 @@ class Validator(BaseValidatorNeuron):
         super(Validator, self).__init__(config=config)
         bt.logging.info("load_state()")
         self.load_state()
-        # change port to 1338 so it doesn't conflict with the miner
-        PORT = 1338
-        self.client = Client(port=PORT)
-        self.client.start("prover")
 
     def rpc_random_poly(self, degree: int) -> str:
         with self.client.random_poly(degree) as response:

@@ -19,7 +19,6 @@ import time
 import typing
 
 import bittensor as bt
-from fourier import Client
 
 # import base miner class which takes care of most of the boilerplate
 from base.miner import BaseMinerNeuron
@@ -35,11 +34,6 @@ class Miner(BaseMinerNeuron):
 
     def __init__(self, config=None):
         super(Miner, self).__init__(config=config)
-
-        # Start the local ZKG RPC server.
-        PORT = 1337
-        self.client = Client(port=PORT)
-        self.client.start("prover")
 
     async def blacklist(self, synapse: Prove) -> typing.Tuple[bool, str]:
         """

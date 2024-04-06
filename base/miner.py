@@ -28,6 +28,7 @@ from bittensor.errors import NotVerifiedException
 from base.neuron import BaseNeuron
 from utils.config import add_miner_args
 
+from fourier import Client
 
 class BaseMinerNeuron(BaseNeuron):
     """
@@ -65,6 +66,11 @@ class BaseMinerNeuron(BaseNeuron):
             priority_fn=self.priority,
         )
         bt.logging.info(f"Axon created: {self.axon}")
+
+        # Start the local ZKG RPC server.
+        PORT = 1337
+        self.client = Client(port=PORT)
+        self.client.start(self.config.prover_path)
 
         # Instantiate runners
         self.should_exit: bool = False
@@ -135,6 +141,7 @@ class BaseMinerNeuron(BaseNeuron):
             # If someone intentionally stops the miner, it'll safely terminate operations.
             except KeyboardInterrupt:
                 self.axon.stop()
+                self.client.stop()
                 bt.logging.success("Miner killed by keyboard interrupt.")
                 exit()
 
