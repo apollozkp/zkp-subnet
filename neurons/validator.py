@@ -88,12 +88,12 @@ class Validator(BaseValidatorNeuron):
 
         # Don't bother verifying if we don't have all info
         if response.commitment is None or response.y is None or response.x is None or response.proof is None:
-            bt.logging.warn("Received incomplete proof.")
+            bt.logging.warning("Received incomplete proof.")
             return 0.0
 
         # Don't even bother spending resources on verifying if the synapse came in too late
         if response_process_time > timeout:
-            bt.logging.warn("Received proof which was too slow.")
+            bt.logging.warning("Received proof which was too slow.")
             return 0.0
 
         valid = self.rpc_verify(
@@ -104,7 +104,7 @@ class Validator(BaseValidatorNeuron):
         )
 
         if not valid:
-            bt.logging.warn("Invalid proof.")
+            bt.logging.warning("Invalid proof.")
             return 0.0
 
         time_off_from_min = response_process_time - min_process_time

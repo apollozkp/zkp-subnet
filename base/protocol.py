@@ -32,25 +32,22 @@ class Prove(bt.Synapse):
         allow_mutation=False,
     )
     commitment: Optional[str] = Field(
-        ..., title="Commitment", description="The commitment to the polynomial."
+        title="Commitment", description="The commitment to the polynomial.", default=None,
     )
     y: Optional[str] = Field(
-        ...,
         title="Output",
         description="The output of the polynomial at x.",
-        allow_mutation=False,
+        default=None,
     )
     x: Optional[str] = Field(
-        ...,
         title="Input",
         description="The input to evaluate the polynomial at.",
-        allow_mutation=False,
+        default=None,
     )
     proof: Optional[str] = Field(
-        ...,
         title="Proof",
         description="The proof of the commitment.",
-        allow_mutation=False,
+        default=None,
     )
 
     def deserialize(self):

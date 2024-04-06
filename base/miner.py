@@ -167,6 +167,7 @@ class BaseMinerNeuron(BaseNeuron):
         Stops the miner's operations that are running in the background thread.
         """
         if self.is_running:
+            self.client.stop()
             bt.logging.debug("Stopping miner in background thread.")
             self.should_exit = True
             self.thread.join(5)

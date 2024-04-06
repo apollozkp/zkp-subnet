@@ -45,16 +45,16 @@ class Miner(BaseMinerNeuron):
                 f"Not Blacklisting recognized hotkey {synapse.dendrite.hotkey} with uid"
                 f" {uid}"
             )
-            return False, ""
+            return False, "Hotkey recognized!"
         except Exception:
             if self.config.blacklist.allow_non_registered:
-                return False
+                return False, "Allowing unregistered hotkey"
             else:
                 bt.logging.warning(
                     "Blacklisting a request from unregistered hotkey"
                     f" {synapse.dendrite.hotkey}"
                 )
-                return True, ""
+                return True, "Unrecognized hotkey"
 
     async def priority(self, synapse: Prove) -> float:
         """
