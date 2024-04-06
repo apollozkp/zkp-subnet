@@ -119,6 +119,13 @@ def add_args(cls, parser):
         default="",
     )
 
+    parser.add_argument(
+        "--prover_path",
+        type=str,
+        help="The path of the Fourier prover binary",
+        default="prover",
+    )
+
 
 def add_miner_args(cls, parser):
     """Add miner specific arguments to the parser."""
