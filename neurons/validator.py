@@ -78,7 +78,7 @@ class Validator(BaseValidatorNeuron):
             challenge = self.generate_challenge()
             await self.query(challenge)
         except Exception as e:
-            bt.logging.error(f"Failed to generate an query challenge: {e}")
+            bt.logging.error(f"Failed to generate a query challenge: {e}")
             bt.logging.error("Retrying in 5 seconds...")
 
     def reward(self, response: Prove, response_process_time: float, min_process_time: float, timeout: float) -> float:
@@ -143,7 +143,7 @@ class Validator(BaseValidatorNeuron):
         # Empty responses shouldn't be used for min_process_time.
         for resp in responses:
             if resp.commitment is None or resp.x is None or resp.y is None or resp.proof is None:
-                resp.dendrite.process_time = resp.dendrite.process_time + timeout
+                resp.dendrite.process_time = timeout + 1.0
 
         responses = [(resp, resp.dendrite.process_time) for resp in responses]
 
