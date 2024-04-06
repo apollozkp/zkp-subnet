@@ -49,6 +49,7 @@ class Validator(BaseValidatorNeuron):
     Validator class for the ZKG network.
     The validator handles the following tasks:
     - challenge: Generate a challenge for the miners to solve.
+    - verify: Verifies proofs generated on challenges by miners.
     """
 
     def __init__(self, config=None):
@@ -60,24 +61,6 @@ class Validator(BaseValidatorNeuron):
         self.client = Client(port=PORT)
         self.client.start()
 
-    def rpc_commit(self, poly: str) -> str:
-        with self.client.commit(poly) as response:
-            if response.status_code != 200:
-                bt.logging.error(
-                    f"RPC request failed with status: {response.status_code}"
-                )
-                raise Exception("Failed to commit to the polynomial.")
-            return response.json().get("result", {}).get("commitment")
-
-    def rpc_open(self, poly: str, x: str) -> str:
-        with self.client.open(poly, x) as response:
-            if response.status_code != 200:
-                bt.logging.error(
-                    f"RPC request failed with status: {response.status_code}"
-                )
-                raise Exception("Failed to open the commitment.")
-            return response.json().get("result", {}).get("proof")
-
     def rpc_verify(self, proof: str, x: str, y: str, commitment: str) -> bool:
         with self.client.verify(proof, x, y, commitment) as response:
             if response.status_code != 200:
@@ -87,45 +70,15 @@ class Validator(BaseValidatorNeuron):
                 raise Exception("Failed to verify the proof.")
             return response.json().get("result", {}).get("valid")
 
-    def rpc_random_poly(self, degree: int) -> str:
-        with self.client.random_poly(degree) as response:
-            if response.status_code != 200:
-                bt.logging.error(
-                    f"RPC request failed with status: {response.status_code}"
-                )
-                raise Exception("Failed to generate a random polynomial.")
-            return response.json().get("result", {}).get("poly")
-
-    def rpc_random_point(self) -> str:
-        with self.client.random_point() as response:
-            if response.status_code != 200:
-                bt.logging.error(
-                    f"RPC request failed with status: {response.status_code}"
-                )
-                raise Exception("Failed to generate a random point.")
-            return response.json().get("result", {}).get("point")
-
-    def rpc_eval(self, poly: str, x: str) -> str:
-        with self.client.eval(poly, x) as response:
-            if response.status_code != 200:
-                bt.logging.error(
-                    f"RPC request failed with status: {response.status_code}"
-                )
-                raise Exception("Failed to evaluate the polynomial.")
-            return response.json().get("result", {}).get("y")
-
-    async def generate_challenge(self) -> Challenge:
+    async def generate_challenge(self) -> Prove:
         """
         Generate a challenge for the miners to solve.
         """
 
         # Generate a random polynomial.
         DEGREE = 10
-        x = self.rpc_random_point()
         poly = self.rpc_random_poly(DEGREE)
-        y = self.rpc_eval(poly, x)
-        commitment = self.rpc_commit(poly)
-        return Challenge(poly, x, y, commitment)
+        return Prove(poly)
 
     async def forward(self):
         bt.logging.debug("Sleeping for 5 seconds...")
@@ -137,22 +90,35 @@ class Validator(BaseValidatorNeuron):
             bt.logging.error(f"Failed to generate and query challenge: {e}")
             bt.logging.error("Retrying in 5 seconds...")
 
-    def reward(self, truth: Verify, response: Open, timeout: float) -> float:
+    def reward(self, response: Prove, response_process_time: float, min_process_times: float, timeout: float) -> float:
         """
         Calculate the miner reward based on correctness and processing time.
         """
+
+        # Don't bother verifying if we don't have all info
+        if response.commitment is None or response.y is None or response.x is None or response.proof is None:
+            bt.logging.warn("Received incomplete proof.")
+            return 0.0
+
+        # Don't even bother spending resources on verifying if the synapse came in too late
+        if response_process_time > timeout:
+            bt.logging.warn("Received proof which was too slow.")
+            return 0.0
+
         valid = self.rpc_verify(
             proof=response.proof,
-            x=truth.x,
-            y=truth.y,
-            commitment=truth.commitment,
+            x=response.x,
+            y=response.y,
+            commitment=response.commitment,
         )
 
         if not valid:
-            bt.logging.info("Invalid proof.")
+            bt.logging.warn("Invalid proof.")
             return 0.0
 
-        return 1.0 / timeout
+        time_off_from_min = response_process_time - min_process_time
+        max_time = timeout - min_process_time
+        return 1.0 - time_off_from_min / max_time
 
     def get_rewards(
         self,
@@ -178,7 +144,7 @@ class Validator(BaseValidatorNeuron):
         timeout = 10
         responses = await self.dendrite(
             axons=[self.metagraph.axons[uid] for uid in miner_uids],
-            synapse=challenge.synapse(),  # send in the execution trace
+            synapse=self.generate_challenge(),
             deserialize=False,  # bogus responses shouldn't kill the validation flow
             timeout=timeout,
         )
