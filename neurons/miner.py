@@ -152,7 +152,6 @@ class Miner(BaseMinerNeuron):
     async def verify_proof_priority(self, synapse: Verify) -> float:
         return await self.priority(synapse)
 
-
 # This is the main function, which runs the miner.
 if __name__ == "__main__":
     with Miner() as miner:
