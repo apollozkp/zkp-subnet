@@ -22,7 +22,7 @@ from typing import Any, List, Optional, Union
 import bittensor as bt
 from bittensor.subnets import SubnetsAPI
 
-from base.protocol import Commit
+from base.protocol import Prove
 from utils import get_query_api_axons
 
 import random
@@ -37,9 +37,9 @@ class CommitmentAPI(SubnetsAPI):
         self.netuid = COMMITMENT_API_NETUID
         self.name = COMMITMENT_API_NAME
 
-    def prepare_synapse(self, p: str) -> Commit:
-        synapse = Commit(
-            polynomial=p,
+    def prepare_synapse(self, p: str) -> Prove:
+        synapse = Prove(
+            poly=p,
         )
         return synapse
 

@@ -17,7 +17,7 @@
 
 import pytest
 
-from base.protocol import Commit
+from base.protocol import Prove
 from neurons.validator import Validator, query, reward
 
 

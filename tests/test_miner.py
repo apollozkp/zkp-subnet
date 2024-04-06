@@ -20,7 +20,7 @@ import pytest
 from bittensor.mock.wallet_mock import get_mock_wallet
 
 from base.neuron import BaseNeuron
-from base.protocol import Commit
+from base.protocol import Prove
 from neurons.miner import Miner 
 
 
