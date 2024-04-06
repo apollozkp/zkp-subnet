@@ -16,7 +16,7 @@ clean:
 prover: .ensure-deps 
 	rm -rf fourier # remove in case of a failed build
 	git clone https://github.com/apollozkp/fourier
-	cd fourier && . "$$HOME/.cargo/env" && cargo build --release && mv target/release/fourier.so ../prover
+	cd fourier && . "$$HOME/.cargo/env" && cargo build --release && mv target/release/fourier ../prover
 	rm -rf fourier
 
 check-env:
