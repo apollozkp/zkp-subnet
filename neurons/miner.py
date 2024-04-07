@@ -78,16 +78,22 @@ class Miner(BaseMinerNeuron):
         """
         Get the priority of the hotkey.
         """
-        caller_uid = self.metagraph.hotkeys.index(
-            synapse.dendrite.hotkey
-        )  # Get the caller index.
-        priority = float(
-            self.metagraph.S[caller_uid]
-        )  # Return the stake as the priority.
-        bt.logging.trace(
-            f"Prioritizing {synapse.dendrite.hotkey} with value: ", priority
-        )
-        return priority
+        try:
+            caller_uid = self.metagraph.hotkeys.index(
+                synapse.dendrite.hotkey
+            )  # Get the caller index.
+            priority = float(
+                self.metagraph.S[caller_uid]
+            )  # Return the stake as the priority.
+            bt.logging.trace(
+                f"Prioritizing {synapse.dendrite.hotkey} with value: ", priority
+            )
+            return priority
+        except Exception:
+            bt.logging.warning(
+                f"Failed to prioritize {synapse.dendrite.hotkey}. Defaulting to 0."
+            )
+            return 0.0
 
     def forward(self, synapse: Prove) -> Prove:
         """
