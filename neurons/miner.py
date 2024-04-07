@@ -99,20 +99,24 @@ class Miner(BaseMinerNeuron):
         """
         Query the connected ZKG RPC server (prove).
         """
-        bt.logging.info("Received synapse on prove", synapse)
-        commitment = self.rpc_commit(synapse.poly)
-        proof = self.rpc_open(synapse.poly, synapse.x)
+        try:
+            bt.logging.info("Received synapse on prove", synapse)
+            commitment = self.rpc_commit(synapse.poly)
+            proof = self.rpc_open(synapse.poly, synapse.x)
 
-        synapse = Prove(
-            poly=synapse.poly,
-            x=synapse.x,
-            y=synapse.y,
-            commitment=commitment,
-            proof=proof,
-        )
-        bt.logging.info("Returning synapse", synapse)
+            synapse = Prove(
+                poly=synapse.poly,
+                x=synapse.x,
+                y=synapse.y,
+                commitment=commitment,
+                proof=proof,
+            )
+            bt.logging.info("Returning synapse", synapse)
 
-        return synapse
+            return synapse
+        except Exception as e:
+            bt.logging.error(f"Failed to forward synapse: {e}")
+            return synapse
 
 
 # This is the main function, which runs the miner.
