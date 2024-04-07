@@ -20,6 +20,7 @@ from typing import List, Optional
 import bittensor as bt
 from pydantic import Field
 
+
 class Prove(bt.Synapse):
     """
     A protocol for proving KZG commitments.
@@ -31,17 +32,19 @@ class Prove(bt.Synapse):
         description="The polynomial to prove.",
         allow_mutation=False,
     )
-    commitment: Optional[str] = Field(
-        title="Commitment", description="The commitment to the polynomial.", default=None,
-    )
-    y: Optional[str] = Field(
-        title="Output",
-        description="The output of the polynomial at x.",
-        default=None,
-    )
-    x: Optional[str] = Field(
+    x: str = Field(
         title="Input",
         description="The input to evaluate the polynomial at.",
+        default=None,
+    )
+    y: str = Field(
+        title="Output",
+        description="The output of the polynomial evaluation.",
+        default=None,
+    )
+    commitment: Optional[str] = Field(
+        title="Commitment",
+        description="The commitment to the polynomial.",
         default=None,
     )
     proof: Optional[str] = Field(
@@ -52,4 +55,3 @@ class Prove(bt.Synapse):
 
     def deserialize(self):
         return self
-
