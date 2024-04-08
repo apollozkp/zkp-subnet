@@ -57,26 +57,33 @@ def test_reward(
 ):
     validator = setup_validator
     challenge = make_proof(validator)
+    simulated_response = challenge
 
     response_process_time = 0.0
     min_process_time = 0.0
     timeout = 10.0
 
     if missing_info:
-        challenge.commitment = None
+        simulated_response.commitment = None
 
-    if too_late: 
+    if too_late:
         response_process_time = 11.0
 
     if invalid_proof:
-        challenge.y = "ea"
+        # xor a character to change the proof
+        changed_proof = chr(ord(simulated_response.proof[0]) ^ 1) + simulated_response.proof[1:]
+        simulated_response.proof = changed_proof
 
     if half_time:
         response_process_time = 5.0
 
-    assert(
+    print("challenge", challenge)
+    print("simulated_response", simulated_response)
+
+    assert (
         validator.reward(
             challenge,
+            simulated_response,
             response_process_time,
             min_process_time,
             timeout,
@@ -88,20 +95,30 @@ def test_reward(
 @pytest.mark.asyncio
 async def test_validator_forward(setup_validator):
     validator = setup_validator
-    
+
     proof = make_proof(validator)
 
     await validator.query(proof)
-    
+
     for score in validator.scores:
         assert score > 0.0
 
+
 def make_proof(validator):
     challenge = validator.generate_challenge()
-    resp = validator.client.prove(challenge.poly)
-    assert resp.status_code == 200
-    challenge.commitment = resp.json().get("result").get("commitment", "")
-    challenge.y = resp.json().get("result").get("y", "")
-    challenge.x = resp.json().get("result").get("x", "")
-    challenge.proof = resp.json().get("result").get("proof", "")
+    with validator.client.commit(challenge.poly) as resp:
+        assert resp.status_code == 200
+        commitment = resp.json().get("result").get("commitment")
+
+    with validator.client.open(challenge.poly, challenge.x) as resp:
+        assert resp.status_code == 200
+        proof = resp.json().get("result").get("proof")
+
+    with validator.client.verify(proof, challenge.x, challenge.y, commitment) as resp:
+        assert resp.status_code == 200
+        assert resp.json().get("result").get("valid")
+
+    challenge.commitment = commitment
+    challenge.proof = proof
     return challenge
+

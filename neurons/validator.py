@@ -178,8 +178,6 @@ class Validator(BaseValidatorNeuron):
         for resp in responses:
             if (
                 resp.commitment is None
-                or resp.x is None
-                or resp.y is None
                 or resp.proof is None
             ):
                 resp.dendrite.process_time = timeout + 1.0
