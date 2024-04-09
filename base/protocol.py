@@ -32,12 +32,12 @@ class Prove(bt.Synapse):
         description="The polynomial to prove.",
         allow_mutation=False,
     )
-    x: str = Field(
+    x: Optional[str] = Field(
         title="Input",
         description="The input to evaluate the polynomial at.",
         default=None,
     )
-    y: str = Field(
+    y: Optional[str] = Field(
         title="Output",
         description="The output of the polynomial evaluation.",
         default=None,

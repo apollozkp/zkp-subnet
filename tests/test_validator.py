@@ -55,6 +55,14 @@ def test_reward(
     half_time,
     expected_value,
 ):
+    def change_proof(proof: str):
+        # Update if we change to base64
+        has_prefix = proof[:2] == "0x"
+        n_bytes = len(proof) // 2 - (1 if has_prefix else 0)
+        # LE or BE doesn't matter, just need >1 bit to change
+        proof_plus_one = hex(int(proof, 16) + 1 % 2 ** (n_bytes * 8))
+        return proof_plus_one if has_prefix else proof_plus_one[2:]
+
     validator = setup_validator
     challenge = make_proof(validator)
     simulated_response = challenge
@@ -70,9 +78,7 @@ def test_reward(
         response_process_time = 11.0
 
     if invalid_proof:
-        # xor a character to change the proof
-        changed_proof = chr(ord(simulated_response.proof[0]) ^ 1) + simulated_response.proof[1:]
-        simulated_response.proof = changed_proof
+        simulated_response.proof = change_proof(simulated_response.proof)
 
     if half_time:
         response_process_time = 5.0
