@@ -67,7 +67,7 @@ class Validator(BaseValidatorNeuron):
         """
 
         # Generate a random polynomial.
-        DEGREE = 10
+        DEGREE = 2**20
         poly = self.rpc_random_poly(DEGREE)
         return Prove(poly=poly)
 
@@ -132,7 +132,7 @@ class Validator(BaseValidatorNeuron):
         miner_uids = get_random_uids(
             self, k=min(self.config.neuron.sample_size, self.metagraph.n.item())
         )
-        timeout = 10
+        timeout = 30
         responses = await self.dendrite(
             axons=[self.metagraph.axons[uid] for uid in miner_uids],
             synapse=challenge,
