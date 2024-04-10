@@ -75,7 +75,7 @@ class Miner(BaseMinerNeuron):
         """
         Query the connected ZKG RPC server (prove).
         """
-        bt.logging.info("Received synapse on prove", synapse)
+        bt.logging.info("Received synapse on prove")
         with self.client.prove(synapse.poly) as resp:
             error = resp.json().get("error")
             if error:
@@ -85,7 +85,7 @@ class Miner(BaseMinerNeuron):
                 synapse.y = resp.json().get("result").get("y", "")
                 synapse.x = resp.json().get("result").get("x", "")
                 synapse.proof = resp.json().get("result").get("proof", "")
-        bt.logging.info("Returning synapse", synapse)
+        bt.logging.info("Returning synapse")
         return synapse
 
 # This is the main function, which runs the miner.
