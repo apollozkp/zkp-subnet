@@ -100,7 +100,7 @@ class Miner(BaseMinerNeuron):
         Query the connected ZKG RPC server (prove).
         """
         try:
-            bt.logging.info("Received synapse on prove", synapse)
+            bt.logging.info("Received synapse on prove")
             commitment = self.rpc_commit(synapse.poly)
             proof = self.rpc_open(synapse.poly, synapse.x)
 
@@ -111,7 +111,7 @@ class Miner(BaseMinerNeuron):
                 commitment=commitment,
                 proof=proof,
             )
-            bt.logging.info("Returning synapse", synapse)
+            bt.logging.info("Returning synapse")
 
             return synapse
         except Exception as e:

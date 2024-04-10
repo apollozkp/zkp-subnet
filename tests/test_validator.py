@@ -111,7 +111,7 @@ async def test_validator_forward(setup_validator):
 
 
 def make_proof(validator):
-    challenge = validator.generate_challenge()
+    challenge = validator.generate_challenge(10)
     with validator.client.commit(challenge.poly) as resp:
         assert resp.status_code == 200
         commitment = resp.json().get("result").get("commitment")
