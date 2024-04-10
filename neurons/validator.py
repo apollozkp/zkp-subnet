@@ -61,14 +61,13 @@ class Validator(BaseValidatorNeuron):
                 raise Exception("Failed to verify the proof.")
             return response.json().get("result", {}).get("valid")
 
-    def generate_challenge(self) -> Prove:
+    def generate_challenge(self, degree: int=2**20) -> Prove:
         """
         Generate a challenge for the miners to solve.
         """
 
         # Generate a random polynomial.
-        DEGREE = 2**20
-        poly = self.rpc_random_poly(DEGREE)
+        poly = self.rpc_random_poly(degree)
         return Prove(poly=poly)
 
     async def forward(self):
