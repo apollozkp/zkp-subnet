@@ -35,6 +35,24 @@ class Miner(BaseMinerNeuron):
     def __init__(self, config=None):
         super(Miner, self).__init__(config=config)
 
+    def rpc_commit(self, poly: str) -> str:
+        with self.client.commit(poly) as response:
+            if response.status_code != 200:
+                bt.logging.error(
+                    f"RPC request failed with status: {response.status_code}"
+                )
+                raise Exception("Failed to commit to the polynomial.")
+            return response.json().get("result", {}).get("commitment")
+
+    def rpc_open(self, poly: str, x: str) -> str:
+        with self.client.open(poly, x) as response:
+            if response.status_code != 200:
+                bt.logging.error(
+                    f"RPC request failed with status: {response.status_code}"
+                )
+                raise Exception("Failed to verify the proof.")
+            return response.json().get("result", {}).get("proof")
+
     async def blacklist(self, synapse: Prove) -> typing.Tuple[bool, str]:
         """
         Check if the hotkey is blacklisted.
@@ -60,33 +78,46 @@ class Miner(BaseMinerNeuron):
         """
         Get the priority of the hotkey.
         """
-        caller_uid = self.metagraph.hotkeys.index(
-            synapse.dendrite.hotkey
-        )  # Get the caller index.
-        priority = float(
-            self.metagraph.S[caller_uid]
-        )  # Return the stake as the priority.
-        bt.logging.trace(
-            f"Prioritizing {synapse.dendrite.hotkey} with value: ", priority
-        )
-        return priority
+        try:
+            caller_uid = self.metagraph.hotkeys.index(
+                synapse.dendrite.hotkey
+            )  # Get the caller index.
+            priority = float(
+                self.metagraph.S[caller_uid]
+            )  # Return the stake as the priority.
+            bt.logging.trace(
+                f"Prioritizing {synapse.dendrite.hotkey} with value: ", priority
+            )
+            return priority
+        except Exception:
+            bt.logging.warning(
+                f"Failed to prioritize {synapse.dendrite.hotkey}. Defaulting to 0."
+            )
+            return 0.0
 
     def forward(self, synapse: Prove) -> Prove:
         """
         Query the connected ZKG RPC server (prove).
         """
-        bt.logging.info("Received synapse on prove")
-        with self.client.prove(synapse.poly) as resp:
-            error = resp.json().get("error")
-            if error:
-                bt.log.error(f"Error proving: {error}")
-            else:
-                synapse.commitment = resp.json().get("result").get("commitment", "")
-                synapse.y = resp.json().get("result").get("y", "")
-                synapse.x = resp.json().get("result").get("x", "")
-                synapse.proof = resp.json().get("result").get("proof", "")
-        bt.logging.info("Returning synapse")
-        return synapse
+        try:
+            bt.logging.info("Received synapse on prove")
+            commitment = self.rpc_commit(synapse.poly)
+            proof = self.rpc_open(synapse.poly, synapse.x)
+
+            synapse = Prove(
+                poly=synapse.poly,
+                x=synapse.x,
+                y=synapse.y,
+                commitment=commitment,
+                proof=proof,
+            )
+            bt.logging.info("Returning synapse")
+
+            return synapse
+        except Exception as e:
+            bt.logging.error(f"Failed to forward synapse: {e}")
+            return synapse
+
 
 # This is the main function, which runs the miner.
 if __name__ == "__main__":
