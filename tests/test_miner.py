@@ -62,8 +62,8 @@ def setup_miner():
     miner.stop_run_thread()
 
 
-@pytest.mark.parametrize("n", [10, 100, 1000])
-def test_miner_forward(setup_miner, n):
+@pytest.mark.parametrize("include_x", [True, False])
+def test_miner_forward(setup_miner, include_x):
     miner = setup_miner
 
     with miner.client.commit(TEST_SYNAPSE.poly) as resp:
@@ -77,6 +77,19 @@ def test_miner_forward(setup_miner, n):
     with miner.client.verify(proof, TEST_SYNAPSE.x, TEST_SYNAPSE.y, commitment) as resp:
         assert resp.status_code == 200
         assert resp.json().get("result", {}).get("valid")
+
+    synapse = TEST_SYNAPSE
+    if not include_x:
+        synapse.x = None
+
+    ret_synapse = miner.forward(TEST_SYNAPSE)
+
+    if include_x:
+        assert ret_synapse.commitment == commitment
+        assert ret_synapse.proof == proof
+    else:
+        assert ret_synapse.poly == synapse.poly
+        assert ret_synapse.y == synapse.y
 
 
 @pytest.mark.asyncio
