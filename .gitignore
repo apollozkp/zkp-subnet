@@ -2,6 +2,12 @@
 .dependencies_installed
 .wallets_setup
 
+# setup artifacts
+setup
+precompute
+prover
+fourier/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
