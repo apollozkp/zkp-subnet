@@ -2,6 +2,8 @@
 
 clean:
 	rm prover
+	rm setup
+	rm precompute
 
 .ensure-deps:
 	sudo apt-get update && sudo apt-get install nodejs npm # we need gmp for cairo lib and nodejs for pm2
@@ -19,6 +21,12 @@ prover: .ensure-deps
 	cd fourier && . "$$HOME/.cargo/env" && cargo build --release && mv target/release/fourier ../prover
 	rm -rf fourier
 
+setup:
+	curl -o setup URL_HERE
+
+precompute:
+	curl -o precompute URL_HERE
+
 check-env:
 	@if [ -z "$${WALLET_NAME}" ]; then \
 		echo "WALLET_NAME is not set" >&2; \
@@ -33,21 +41,21 @@ python-setup:
 	pip install -r requirements.txt && python3 -m pip install -e .
 
 # TODO: set netuid and subtensor
-miner: prover python-setup check-env
+miner: setup precompute prover python-setup check-env
 	pm2 start neurons/miner.py --interpreter python3 -- --netuid 1 --wallet.name $(WALLET_NAME) --wallet.hotkey $(HOTKEY_NAME) --logging.debug
 
 # TODO: set netuid and subtensor
-validator: prover python-setup check-env
+validator: setup precompute prover python-setup check-env
 	pm2 start neurons/validator.py --interpreter python3 -- --netuid 1 --wallet.name $(WALLET_NAME) --wallet.hotkey $(HOTKEY_NAME) --logging.debug
 
-miner-testnet: prover python-setup check-env
+miner-testnet: setup precompute prover python-setup check-env
 	pm2 start neurons/miner.py --interpreter python3 -- --netuid 115 --subtensor.network test --wallet.name $(WALLET_NAME) --wallet.hotkey $(HOTKEY_NAME) --logging.debug
 
-validator-testnet: prover python-setup check-env
+validator-testnet: setup precompute prover python-setup check-env
 	pm2 start neurons/validator.py --interpreter python3 -- --netuid 115 --subtensor.network test --wallet.name $(WALLET_NAME) --wallet.hotkey $(HOTKEY_NAME) --logging.debug
 
-miner-staging: prover python-setup check-env
+miner-staging: setup precompute prover python-setup check-env
 	pm2 start neurons/miner.py --interpreter python3 -- --netuid 1 --subtensor.chain_endpoint ws://127.0.0.1:9946 --wallet.name $(WALLET_NAME) --wallet.hotkey $(HOTKEY_NAME) --logging.debug
 
-validator-staging: prover python-setup check-env
+validator-staging: setup precompute prover python-setup check-env
 	pm2 start neurons/validator.py --interpreter python3 -- --netuid 1 --subtensor.chain_endpoint ws://127.0.0.1:9946 --wallet.name $(WALLET_NAME) --wallet.hotkey $(HOTKEY_NAME) --logging.debug
