@@ -28,12 +28,14 @@ def compile_prover_lib():
 
     subprocess.check_call(f"git clone {FOURIER_URL}", shell=True)
 
+    base_path = os.getcwd()
     os.chdir("fourier")
     subprocess.check_call("cargo build --release", shell=True)
 
     subprocess.check_call("mv target/release/fourier ../prover", shell=True)
-    os.chdir("..")
-    subprocess.check_call("chmod u+x fourier", shell=True)
+    os.chdir(base_path)
+    subprocess.check_call("chmod u+x prover", shell=True)
+    subprocess.check_call("./prover setup --setup-path setup --precompute-path precompute --scale 4 --generate-setup --generate-precompute --overwrite", shell=True)
 
 @pytest.fixture(scope="session", autouse=True)
 def cleanup_env(request):
@@ -42,5 +44,9 @@ def cleanup_env(request):
             subprocess.check_call("rm -rf fourier", shell=True)
         if os.path.exists("prover"):
             subprocess.check_call("rm prover", shell=True)
+        if os.path.exists("setup"):
+            subprocess.check_call("rm setup", shell=True)
+        if os.path.exists("precompute"):
+            subprocess.check_call("rm precompute", shell=True)
 
     request.addfinalizer(cleanup)
