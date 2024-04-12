@@ -77,8 +77,8 @@ class BaseValidatorNeuron(BaseNeuron):
 
         # change port to 1338 so it doesn't conflict with the miner
         PORT = 1338
-        self.client = Client(port=PORT)
-        self.client.start(self.config.prover_path)
+        self.client = Client(port=PORT, bin=self.config.prover_path)
+        self.client.start()
 
         # Instantiate runners
         self.should_exit: bool = False

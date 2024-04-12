@@ -69,8 +69,8 @@ class BaseMinerNeuron(BaseNeuron):
 
         # Start the local ZKG RPC server.
         PORT = 1337
-        self.client = Client(port=PORT)
-        self.client.start(self.config.prover_path)
+        self.client = Client(port=PORT, bin=self.config.prover_path)
+        self.client.start()
 
         # Instantiate runners
         self.should_exit: bool = False

@@ -123,7 +123,7 @@ def add_args(cls, parser):
         "--prover_path",
         type=str,
         help="The path of the Fourier prover binary",
-        default="prover",
+        default="./prover",
     )
 
 
