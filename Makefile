@@ -22,10 +22,10 @@ prover: .ensure-deps
 	rm -rf fourier
 
 setup:
-	curl -o setup URL_HERE
+	curl -o setup https://apollozkp.s3.eu-north-1.amazonaws.com/setup
 
 precompute:
-	curl -o precompute URL_HERE
+	curl -o precompute https://apollozkp.s3.eu-north-1.amazonaws.com/precompute
 
 check-env:
 	@if [ -z "$${WALLET_NAME}" ]; then \
