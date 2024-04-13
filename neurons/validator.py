@@ -91,10 +91,10 @@ class Validator(BaseValidatorNeuron):
         return Prove(poly=poly, x=x, y=y)
 
     async def forward(self):
-        bt.logging.debug("Sleeping for 5 seconds...")
-        time.sleep(5)
         try:
+            bt.logging.info("generating challenge for miners")
             challenge = self.generate_challenge()
+            bt.logging.info("sending challenge to miners")
             await self.query(challenge)
         except Exception as e:
             bt.logging.error(f"Failed to generate a query challenge: {e}")
