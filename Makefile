@@ -6,7 +6,7 @@ clean:
 	rm precompute
 
 .ensure-deps:
-	sudo apt-get update && sudo apt-get install nodejs npm # we need gmp for cairo lib and nodejs for pm2
+	sudo apt-get update && sudo apt-get install nodejs npm
 	npm install -g pm2
 	-. "$$HOME/.cargo/env" # source cargo just in case shell was never reloaded
 	@command -v cargo >/dev/null 2>&1 || { \
