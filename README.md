@@ -44,20 +44,18 @@ Our aim with this subnet is to provide a public API which can easily undercut co
 
 ## Hardware requirements
 
-As we move towards improving and completing more of the stack, these requirements will slowly go up - especially as more powerful hardware and more competitors enter the subnet (as speed determines everything!), but for the initial version these specs should do:
-
 ### Validator requirements
 
 - Ubuntu 22.04
-- At least 4 vCPUs
-- At least 16 GB RAM (DDR4 or higher)
+- At least 8 physical cores
+- At least 64 GB RAM (DDR4 or higher)
 - 200 GB storage
 
 ### Miner requirements
 
 - Ubuntu 22.04
-- At least 4 vCPUs
-- At least 16 GB RAM (DDR4 or higher)
+- At least 8 physical cores
+- At least 64 GB RAM (DDR4 or higher)
 - 200 GB storage
 
 ## Getting started
