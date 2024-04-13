@@ -79,7 +79,7 @@ class Validator(BaseValidatorNeuron):
                 raise Exception("Failed to evaluate the polynomial.")
             return response.json().get("result", {}).get("y")
 
-    def generate_challenge(self, degree: int=2**20) -> Prove:
+    def generate_challenge(self, degree: int=(2**20) - 1) -> Prove:
         """
         Generate a challenge for the miners to solve.
         """
@@ -165,7 +165,7 @@ class Validator(BaseValidatorNeuron):
         miner_uids = get_random_uids(
             self, k=min(self.config.neuron.sample_size, self.metagraph.n.item())
         )
-        timeout = 30
+        timeout = 60
         responses = await self.dendrite(
             axons=[self.metagraph.axons[uid] for uid in miner_uids],
             synapse=challenge,
