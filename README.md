@@ -34,8 +34,8 @@ Our aim with this subnet is to provide a public API which can easily undercut co
 ## Roadmap
 
 - [x] Deploy v0 on Bittensor testnet
-- [ ] Deploy v0 on Bittensor mainnet | In progress...
-- [ ] Implement and deploy vanilla-PLONK style constraint aggregation
+- [x] Deploy v0 on Bittensor mainnet
+- [ ] Implement and deploy vanilla-PLONK style constraint aggregation | In progress...
 - [ ] Build payment infrastructure to fully open a public API for proof generation with payouts to miners and validators
 - [ ] Extend constraint aggregation support to any type of circuit (KZG only)
 - [ ] Explore segmented lookup tables in constraint aggregation work
