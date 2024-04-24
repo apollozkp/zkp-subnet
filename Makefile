@@ -40,13 +40,11 @@ check-env:
 python-setup:
 	pip install -r requirements.txt && python3 -m pip install -e .
 
-# TODO: set netuid and subtensor
 miner: setup precompute prover python-setup check-env
-	pm2 start neurons/miner.py --interpreter python3 -- --netuid 1 --wallet.name $(WALLET_NAME) --wallet.hotkey $(HOTKEY_NAME) --logging.debug
+	pm2 start neurons/miner.py --interpreter python3 -- --netuid 10 --wallet.name $(WALLET_NAME) --wallet.hotkey $(HOTKEY_NAME) --logging.debug
 
-# TODO: set netuid and subtensor
 validator: setup precompute prover python-setup check-env
-	pm2 start neurons/validator.py --interpreter python3 -- --netuid 1 --wallet.name $(WALLET_NAME) --wallet.hotkey $(HOTKEY_NAME) --logging.debug
+	pm2 start neurons/validator.py --interpreter python3 -- --netuid 10 --wallet.name $(WALLET_NAME) --wallet.hotkey $(HOTKEY_NAME) --logging.debug
 
 miner-testnet: setup precompute prover python-setup check-env
 	pm2 start neurons/miner.py --interpreter python3 -- --netuid 115 --subtensor.network test --wallet.name $(WALLET_NAME) --wallet.hotkey $(HOTKEY_NAME) --logging.debug
