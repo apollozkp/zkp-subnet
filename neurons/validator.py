@@ -79,7 +79,7 @@ class Validator(BaseValidatorNeuron):
                 raise Exception("Failed to evaluate the polynomial.")
             return response.json().get("result", {}).get("y")
 
-    def generate_challenge(self, degree: int=(2**20) - 1) -> Prove:
+    def generate_challenge(self, degree: int=(2**18) - 1) -> Prove:
         """
         Generate a challenge for the miners to solve.
         """
