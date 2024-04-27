@@ -165,7 +165,7 @@ class Validator(BaseValidatorNeuron):
         miner_uids = get_random_uids(
             self, k=min(self.config.neuron.sample_size, self.metagraph.n.item())
         )
-        timeout = 60
+        timeout = 30
         responses = await self.dendrite(
             axons=[self.metagraph.axons[uid] for uid in miner_uids],
             synapse=challenge,
