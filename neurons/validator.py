@@ -171,6 +171,7 @@ class Validator(BaseValidatorNeuron):
             synapse=challenge,
             deserialize=False,  # bogus responses shouldn't kill the validation flow
             timeout=timeout,
+            run_async=False,
         )
 
         # Empty responses shouldn't be used for min_process_time.
