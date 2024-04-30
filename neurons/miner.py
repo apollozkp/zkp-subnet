@@ -105,9 +105,12 @@ class Miner(BaseMinerNeuron):
             proof = self.rpc_open(synapse.poly, synapse.x)
 
             synapse = Prove(
-                poly=synapse.poly,
-                x=synapse.x,
-                y=synapse.y,
+                # Send back empty values to save bandwidth
+                poly=[],  
+                x=None,
+                y=None,
+
+                # These are the only values we care about
                 commitment=commitment,
                 proof=proof,
             )
