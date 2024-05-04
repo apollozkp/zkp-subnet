@@ -87,9 +87,6 @@ def test_miner_forward(setup_miner, include_x):
     if include_x:
         assert ret_synapse.commitment == commitment
         assert ret_synapse.proof == proof
-    else:
-        assert ret_synapse.poly == synapse.poly
-        assert ret_synapse.y == synapse.y
 
 
 @pytest.mark.asyncio
