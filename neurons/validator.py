@@ -104,8 +104,6 @@ class Validator(BaseValidatorNeuron):
         self,
         challenge: Prove,
         response: Prove,
-        response_process_time: float,
-        min_process_time: float,
         timeout: float,
     ) -> float:
         """
@@ -121,7 +119,7 @@ class Validator(BaseValidatorNeuron):
             return 0.0
 
         # Don't even bother spending resources on verifying if the synapse came in too late
-        if response_process_time > timeout:
+        if response.dendrite.process_time > timeout:
             bt.logging.warning("Received proof which was too slow.")
             return 0.0
 
@@ -136,24 +134,21 @@ class Validator(BaseValidatorNeuron):
             bt.logging.warning("Invalid proof.")
             return 0.0
 
-        time_off_from_min = response_process_time - min_process_time
-        max_time = timeout - min_process_time
-        return 1.0 - time_off_from_min / max_time
+        return 1.0 - response.dendrite.process_time / timeout
 
     def get_rewards(
         self,
         challenge: Prove,
-        responses: List[Tuple[Prove, float]],
+        responses: List[Prove],
         timeout: float,
     ) -> torch.FloatTensor:
         """
         Calculate the miner rewards based on correctness and processing time.
         """
         # Get the fastest processing time.
-        min_process_time = min([response[1] for response in responses])
         return torch.FloatTensor(
             [
-                self.reward(challenge, response[0], response[1], min_process_time, timeout)
+                self.reward(challenge, response, timeout)
                 for response in responses
             ]
         ).to(self.device)
@@ -172,16 +167,6 @@ class Validator(BaseValidatorNeuron):
             deserialize=False,  # bogus responses shouldn't kill the validation flow
             timeout=timeout,
         )
-
-        # Empty responses shouldn't be used for min_process_time.
-        for resp in responses:
-            if (
-                resp.commitment is None
-                or resp.proof is None
-            ):
-                resp.dendrite.process_time = timeout + 1.0
-
-        responses = [(resp, resp.dendrite.process_time) for resp in responses]
 
         # Adjust the scores based on responses from miners.
         rewards = self.get_rewards(challenge, responses, timeout)

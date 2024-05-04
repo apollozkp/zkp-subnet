@@ -68,7 +68,6 @@ def test_reward(
     simulated_response = challenge
 
     response_process_time = 0.0
-    min_process_time = 0.0
     timeout = 10.0
 
     if missing_info:
@@ -91,7 +90,6 @@ def test_reward(
             challenge,
             simulated_response,
             response_process_time,
-            min_process_time,
             timeout,
         )
         == expected_value
