@@ -67,20 +67,19 @@ def test_reward(
     challenge = make_proof(validator)
     simulated_response = challenge
 
-    response_process_time = 0.0
     timeout = 10.0
 
     if missing_info:
         simulated_response.commitment = None
 
     if too_late:
-        response_process_time = 11.0
+        simulated_response.dendrite.process_time = 11.0
 
     if invalid_proof:
         simulated_response.proof = change_proof(simulated_response.proof)
 
     if half_time:
-        response_process_time = 5.0
+        simulated_response.dendrite.process_time = 5.0
 
     print("challenge", challenge)
     print("simulated_response", simulated_response)
@@ -89,7 +88,6 @@ def test_reward(
         validator.reward(
             challenge,
             simulated_response,
-            response_process_time,
             timeout,
         )
         == expected_value
