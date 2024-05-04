@@ -66,6 +66,7 @@ def test_reward(
     validator = setup_validator
     challenge = make_proof(validator)
     simulated_response = challenge
+    simulated_response.dendrite.process_time = 0.0
 
     timeout = 10.0
 
