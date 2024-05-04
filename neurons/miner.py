@@ -101,8 +101,11 @@ class Miner(BaseMinerNeuron):
         """
         try:
             bt.logging.info("Received synapse on prove")
+            before = time.perf_counter()
             commitment = self.rpc_commit(synapse.poly)
             proof = self.rpc_open(synapse.poly, synapse.x)
+            elapsed = time.perf_counter() - before
+            bt.logging.info(f"Proof generation completed in {elapsed} seconds")
 
             synapse = Prove(
                 # Send back empty values to save bandwidth
