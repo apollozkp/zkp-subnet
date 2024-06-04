@@ -35,23 +35,28 @@ class Miner(BaseMinerNeuron):
     def __init__(self, config=None):
         super(Miner, self).__init__(config=config)
 
-    def rpc_commit(self, poly: str) -> str:
-        with self.client.commit(poly) as response:
+    def rpc_commit(self, i: int, poly: str) -> str:
+        with self.client.worker_commit(i, poly) as response:
             if response.status_code != 200:
                 bt.logging.error(
                     f"RPC request failed with status: {response.status_code}"
                 )
                 raise Exception("Failed to commit to the polynomial.")
-            return response.json().get("result", {}).get("commitment")
+            return response.json().get("commitment")
 
-    def rpc_open(self, poly: str, x: str) -> str:
-        with self.client.open(poly, x) as response:
+    def rpc_open(self, i: int, poly: str, x: str) -> str:
+        with self.client.worker_open(i, poly, x) as response:
             if response.status_code != 200:
                 bt.logging.error(
                     f"RPC request failed with status: {response.status_code}"
                 )
                 raise Exception("Failed to verify the proof.")
-            return response.json().get("result", {}).get("proof")
+            return response.json().get("proof")
+
+    def rpc_commit_and_open(self, i: int, poly: str, x: str) -> typing.Tuple[str, str]:
+        commitment = self.rpc_commit(i, poly)
+        eval, proof = self.rpc_open(i, poly, x)
+        return commitment, eval, proof
 
     async def blacklist(self, synapse: Prove) -> typing.Tuple[bool, str]:
         """
@@ -89,6 +94,7 @@ class Miner(BaseMinerNeuron):
                 f"Prioritizing {synapse.dendrite.hotkey} with value: ", priority
             )
             return priority
+
         except Exception:
             bt.logging.warning(
                 f"Failed to prioritize {synapse.dendrite.hotkey}. Defaulting to 0."
@@ -102,24 +108,23 @@ class Miner(BaseMinerNeuron):
         try:
             bt.logging.info("Received synapse on prove")
             before = time.perf_counter()
-            commitment = self.rpc_commit(synapse.poly)
-            proof = self.rpc_open(synapse.poly, synapse.x)
+            commitment, eval, proof = self.rpc_commit_and_open(synapse.poly, synapse.x)
             elapsed = time.perf_counter() - before
             bt.logging.info(f"Proof generation completed in {elapsed} seconds")
 
             synapse = Prove(
                 # Send back empty values to save bandwidth
-                poly=[],  
+                poly=[],
                 x=None,
-                y=None,
-
-                # These are the only values we care about
+                # These are the only values we care about sending back
+                eval=eval,
                 commitment=commitment,
                 proof=proof,
             )
-            bt.logging.info("Returning synapse")
 
+            bt.logging.info("Returning synapse")
             return synapse
+
         except Exception as e:
             bt.logging.error(f"Failed to forward synapse: {e}")
             return synapse

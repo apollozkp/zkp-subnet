@@ -16,6 +16,7 @@
 # DEALINGS IN THE SOFTWARE.
 
 
+import asyncio
 import time
 from typing import List, Tuple
 
@@ -25,9 +26,19 @@ import torch
 
 # Import forward dependencies.
 from base.protocol import Prove
+
 # import base validator class which takes care of most of the boilerplate
 from base.validator import BaseValidatorNeuron
 from utils.uids import get_random_uids
+
+
+class Challenge:
+    def __init__(self, polys: List[str], alpha: str):
+        self.polys = polys
+        self.alpha = alpha
+
+    def to_synapse(self, i: int) -> Prove:
+        return Prove(index=str(i), poly=self.polys[i], alpha=self.alpha)
 
 
 class Validator(BaseValidatorNeuron):
@@ -43,6 +54,15 @@ class Validator(BaseValidatorNeuron):
         bt.logging.info("load_state()")
         self.load_state()
 
+    def rpc_fft(self, poly: List[str]) -> List[str]:
+        with self.client.fft(poly) as response:
+            if response.status_code != 200:
+                bt.logging.error(
+                    f"RPC request failed with status: {response.status_code}"
+                )
+                raise Exception("Failed to commit to the polynomial.")
+            return response.json().get("fft")
+
     def rpc_random_poly(self, degree: int) -> str:
         with self.client.random_poly(degree) as response:
             if response.status_code != 200:
@@ -50,16 +70,18 @@ class Validator(BaseValidatorNeuron):
                     f"RPC request failed with status: {response.status_code}"
                 )
                 raise Exception("Failed to generate a random polynomial.")
-            return response.json().get("result", {}).get("poly")
+            return response.json().get("poly")
 
-    def rpc_verify(self, proof: str, x: str, y: str, commitment: str) -> bool:
-        with self.client.verify(proof, x, y, commitment) as response:
+    def rpc_worker_verify(
+        self, i: int, proof: str, alpha: str, eval: str, commitment: str
+    ) -> bool:
+        with self.client.worker_verify(i, proof, alpha, eval, commitment) as response:
             if response.status_code != 200:
                 bt.logging.error(
                     f"RPC request failed with status: {response.status_code}"
                 )
                 raise Exception("Failed to verify the proof.")
-            return response.json().get("result", {}).get("valid")
+            return response.json().get("valid")
 
     def rpc_random_x(self) -> str:
         with self.client.random_point() as response:
@@ -68,7 +90,7 @@ class Validator(BaseValidatorNeuron):
                     f"RPC request failed with status: {response.status_code}"
                 )
                 raise Exception("Failed to generate a random x.")
-            return response.json().get("result", {}).get("point")
+            return response.json().get("point")
 
     def rpc_eval(self, poly: str, x: str) -> str:
         with self.client.eval(poly, x) as response:
@@ -77,18 +99,18 @@ class Validator(BaseValidatorNeuron):
                     f"RPC request failed with status: {response.status_code}"
                 )
                 raise Exception("Failed to evaluate the polynomial.")
-            return response.json().get("result", {}).get("y")
+            return response.json().get("eval")
 
-    def generate_challenge(self, degree: int=(2**18) - 1) -> Prove:
+    def generate_challenge(self, machines_count: int) -> Challenge:
         """
         Generate a challenge for the miners to solve.
         """
 
         # Generate a random polynomial.
-        poly = self.rpc_random_poly(degree)
-        x = self.rpc_random_x()
-        y = self.rpc_eval(poly, x)
-        return Prove(poly=poly, x=x, y=y)
+        poly = self.rpc_random_poly()
+        alpha = self.rpc_random_x()
+        polys = [self.rpc_fft(poly[i]) for i in range(machines_count)]
+        return Challenge(polys=polys, alpha=alpha)
 
     async def forward(self):
         try:
@@ -102,6 +124,7 @@ class Validator(BaseValidatorNeuron):
 
     def reward(
         self,
+        i: int,
         challenge: Prove,
         response: Prove,
         timeout: float,
@@ -111,19 +134,18 @@ class Validator(BaseValidatorNeuron):
         """
 
         # Don't bother verifying if we don't have all info
-        if (
-            response.commitment is None
-            or response.proof is None
-        ):
+        if response.commitment is None or response.proof is None:
             bt.logging.warning("Received incomplete proof.")
             return 0.0
 
-        # Don't even bother spending resources on verifying if the synapse came in too late
+        # Don't even bother spending resources on verifying if the synapse
+        # came in too late
         if response.dendrite.process_time > timeout:
             bt.logging.warning("Received proof which was too slow.")
             return 0.0
 
-        valid = self.rpc_verify(
+        valid = self.rpc_worker_verify(
+            i=i,
             proof=response.proof,
             x=challenge.x,
             y=challenge.y,
@@ -145,15 +167,11 @@ class Validator(BaseValidatorNeuron):
         """
         Calculate the miner rewards based on correctness and processing time.
         """
-        # Get the fastest processing time.
         return torch.FloatTensor(
-            [
-                self.reward(challenge, response, timeout)
-                for response in responses
-            ]
+            [self.reward(challenge, response, timeout) for response in responses]
         ).to(self.device)
 
-    async def query(self, challenge: Prove) -> torch.FloatTensor:
+    async def query(self, challenge: Challenge) -> torch.FloatTensor:
         """
         Query the connected miners with a challenge
         """
@@ -161,18 +179,30 @@ class Validator(BaseValidatorNeuron):
             self, k=min(self.config.neuron.sample_size, self.metagraph.n.item())
         )
         timeout = 30
-        responses = await self.dendrite(
-            axons=[self.metagraph.axons[uid] for uid in miner_uids],
-            synapse=challenge,
-            deserialize=False,  # bogus responses shouldn't kill the validation flow
-            timeout=timeout,
-        )
+
+        # We have to create seperate tasks for each miner to query them concurrently.
+        # This is because the default dendrite implementation only supports
+        # querying several axons with the same synapse.
+        tasks = [
+            asyncio.ensure_future(
+                self.dendrite(
+                    synapse=challenge.to_synapse(i),
+                    deserialize=False,
+                    timeout=timeout,
+                    axons=[self.metagraph.axons[uid]],
+                )
+            )
+            for i, uid in enumerate(miner_uids)
+        ]
+
+        responses = await asyncio.gather(*tasks)
 
         # Adjust the scores based on responses from miners.
         rewards = self.get_rewards(challenge, responses, timeout)
         bt.logging.info(f"Scored responses: {rewards}")
 
-        # Update the scores based on the rewards. You may want to define your own update_scores function for custom behavior.
+        # Update the scores based on the rewards.
+        # You may want to define your own update_scores function for custom behavior.
         self.update_scores(rewards, miner_uids)
 
 

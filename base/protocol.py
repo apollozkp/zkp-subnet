@@ -26,20 +26,26 @@ class Prove(bt.Synapse):
     A protocol for proving KZG commitments.
     """
 
+    index: str = Field(
+        ...,
+        title="Worker Index",
+        description="The Index that the miner should use to identify itself.",
+        allow_mutation=False,
+    )
     poly: List[str] = Field(
         ...,
         title="Polynomial",
         description="The polynomial to prove.",
         allow_mutation=False,
     )
-    x: Optional[str] = Field(
+    alpha: Optional[str] = Field(
         title="Input",
         description="The input to evaluate the polynomial at.",
         default=None,
     )
-    y: Optional[str] = Field(
-        title="Output",
-        description="The output of the polynomial evaluation.",
+    eval: Optional[str] = Field(
+        title="Evaluation",
+        description="The evaluation of the polynomial at the input.",
         default=None,
     )
     commitment: Optional[str] = Field(
