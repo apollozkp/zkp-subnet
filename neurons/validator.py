@@ -18,11 +18,11 @@
 
 import asyncio
 import time
-from typing import List, Tuple
+from typing import List
 
 # Bittensor
 import bittensor as bt
-import torch
+import numpy as np
 
 # Import forward dependencies.
 from base.protocol import Prove
@@ -33,12 +33,12 @@ from utils.uids import get_random_uids
 
 
 class Challenge:
-    def __init__(self, polys: List[str], alpha: str):
+    def __init__(self, polys: List[List[str]], alpha: str):
         self.polys = polys
         self.alpha = alpha
 
     def to_synapse(self, i: int) -> Prove:
-        return Prove(index=str(i), poly=self.polys[i], alpha=self.alpha)
+        return Prove(index=i, poly=self.polys[i], alpha=self.alpha)
 
 
 class Validator(BaseValidatorNeuron):
@@ -54,17 +54,17 @@ class Validator(BaseValidatorNeuron):
         bt.logging.info("load_state()")
         self.load_state()
 
-    def rpc_fft(self, poly: List[str]) -> List[str]:
-        with self.client.fft(poly) as response:
+    def rpc_fft(self, poly: List[str], left: bool, inverse: bool) -> List[str]:
+        with self.client.fft(poly, left, inverse) as response:
             if response.status_code != 200:
                 bt.logging.error(
                     f"RPC request failed with status: {response.status_code}"
                 )
                 raise Exception("Failed to commit to the polynomial.")
-            return response.json().get("fft")
+            return response.json().get("poly")
 
-    def rpc_random_poly(self, degree: int) -> str:
-        with self.client.random_poly(degree) as response:
+    def rpc_random_poly(self) -> str:
+        with self.client.random_poly() as response:
             if response.status_code != 200:
                 bt.logging.error(
                     f"RPC request failed with status: {response.status_code}"
@@ -109,13 +109,18 @@ class Validator(BaseValidatorNeuron):
         # Generate a random polynomial.
         poly = self.rpc_random_poly()
         alpha = self.rpc_random_x()
-        polys = [self.rpc_fft(poly[i]) for i in range(machines_count)]
+        polys = [
+            self.rpc_fft(poly=poly[i], left=True, inverse=True)
+            for i in range(machines_count)
+        ]
         return Challenge(polys=polys, alpha=alpha)
 
     async def forward(self):
         try:
             bt.logging.info("generating challenge for miners")
-            challenge = self.generate_challenge()
+            challenge = self.generate_challenge(
+                min(self.config.neuron.sample_size, self.metagraph.n.item())
+            )
             bt.logging.info("sending challenge to miners")
             await self.query(challenge)
         except Exception as e:
@@ -124,11 +129,10 @@ class Validator(BaseValidatorNeuron):
 
     def reward(
         self,
-        i: int,
         challenge: Prove,
         response: Prove,
         timeout: float,
-    ) -> float:
+    ) -> np.float32:
         """
         Calculate the miner reward based on correctness and processing time.
         """
@@ -145,10 +149,10 @@ class Validator(BaseValidatorNeuron):
             return 0.0
 
         valid = self.rpc_worker_verify(
-            i=i,
+            i=response.index,
             proof=response.proof,
-            x=challenge.x,
-            y=challenge.y,
+            alpha=challenge.alpha,
+            eval=response.eval,
             commitment=response.commitment,
         )
 
@@ -160,25 +164,28 @@ class Validator(BaseValidatorNeuron):
 
     def get_rewards(
         self,
-        challenge: Prove,
+        challenge: Challenge,
         responses: List[Prove],
         timeout: float,
-    ) -> torch.FloatTensor:
+    ) -> np.array:
         """
         Calculate the miner rewards based on correctness and processing time.
         """
-        return torch.FloatTensor(
-            [self.reward(challenge, response, timeout) for response in responses]
-        ).to(self.device)
+        # Get the fastest processing time.
+        scores = [
+            self.reward(challenge.to_synapse(response.index), response, timeout)
+            for response in responses
+        ]
+        return np.array(scores, dtype=np.float32)
 
-    async def query(self, challenge: Challenge) -> torch.FloatTensor:
+    async def query(self, challenge: Challenge):
         """
         Query the connected miners with a challenge
         """
         miner_uids = get_random_uids(
             self, k=min(self.config.neuron.sample_size, self.metagraph.n.item())
         )
-        timeout = 30
+        timeout = 30.
 
         # We have to create seperate tasks for each miner to query them concurrently.
         # This is because the default dendrite implementation only supports
@@ -195,7 +202,7 @@ class Validator(BaseValidatorNeuron):
             for i, uid in enumerate(miner_uids)
         ]
 
-        responses = await asyncio.gather(*tasks)
+        responses = [response[0] for response in await asyncio.gather(*tasks)]
 
         # Adjust the scores based on responses from miners.
         rewards = self.get_rewards(challenge, responses, timeout)

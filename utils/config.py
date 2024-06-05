@@ -17,9 +17,27 @@
 # DEALINGS IN THE SOFTWARE.
 
 import os
-import torch
 import argparse
 import bittensor as bt
+import numpy as np
+
+import subprocess
+
+def is_cuda_available():
+    try:
+        output = subprocess.check_output(["nvidia-smi", "-L"], stderr=subprocess.STDOUT)
+        if "NVIDIA" in output.decode("utf-8"):
+            return "cuda"
+    except Exception:
+        pass
+    try:
+        output = subprocess.check_output(["nvcc", "--version"]).decode("utf-8")
+        if "release" in output:
+            return "cuda"
+    except Exception:
+        pass
+    return "cpu"
+
 
 def check_config(cls, config: "bt.Config"):
     r"""Checks/validates the config namespace object."""
@@ -51,7 +69,7 @@ def add_args(cls, parser):
         "--neuron.device",
         type=str,
         help="Device to run on.",
-        default="cuda" if torch.cuda.is_available() else "cpu",
+        default=is_cuda_available(),
     )
 
     parser.add_argument(
@@ -108,6 +126,41 @@ def add_args(cls, parser):
         type=str,
         help="The path of the Fourier prover binary",
         default="./prover",
+    )
+
+    parser.add_argument(
+        "--uncompressed",
+        type=bool,
+        help="Whether to use uncompressed setup/precompute files",
+        default=False,
+    )
+
+    parser.add_argument(
+        "--setup_path",
+        type=str,
+        help="The path of the setup file",
+        default="./setup",
+    )
+
+    parser.add_argument(
+        "--precompute_path",
+        type=str,
+        help="The path of the precompute file",
+        default="./precompute",
+    )
+
+    parser.add_argument(
+        "--scale",
+        type=int,
+        help="The circuit scale",
+        default=18,
+    )
+
+    parser.add_argument(
+        "--machines_scale",
+        type=int,
+        help="The distribution scale",
+        default=8,
     )
 
 

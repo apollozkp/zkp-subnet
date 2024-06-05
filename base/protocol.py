@@ -26,7 +26,7 @@ class Prove(bt.Synapse):
     A protocol for proving KZG commitments.
     """
 
-    index: str = Field(
+    index: int = Field(
         ...,
         title="Worker Index",
         description="The Index that the miner should use to identify itself.",

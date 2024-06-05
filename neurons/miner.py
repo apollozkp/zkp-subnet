@@ -44,18 +44,20 @@ class Miner(BaseMinerNeuron):
                 raise Exception("Failed to commit to the polynomial.")
             return response.json().get("commitment")
 
-    def rpc_open(self, i: int, poly: str, x: str) -> str:
+    def rpc_open(self, i: int, poly: str, x: str) -> typing.Tuple[str, str]:
         with self.client.worker_open(i, poly, x) as response:
             if response.status_code != 200:
                 bt.logging.error(
                     f"RPC request failed with status: {response.status_code}"
                 )
                 raise Exception("Failed to verify the proof.")
-            return response.json().get("proof")
+            return response.json().get("eval"), response.json().get("proof")
 
-    def rpc_commit_and_open(self, i: int, poly: str, x: str) -> typing.Tuple[str, str]:
+    def rpc_commit_and_open(
+        self, i: int, poly: str, alpha: str
+    ) -> typing.Tuple[str, str]:
         commitment = self.rpc_commit(i, poly)
-        eval, proof = self.rpc_open(i, poly, x)
+        eval, proof = self.rpc_open(i, poly, alpha)
         return commitment, eval, proof
 
     async def blacklist(self, synapse: Prove) -> typing.Tuple[bool, str]:
@@ -108,14 +110,17 @@ class Miner(BaseMinerNeuron):
         try:
             bt.logging.info("Received synapse on prove")
             before = time.perf_counter()
-            commitment, eval, proof = self.rpc_commit_and_open(synapse.poly, synapse.x)
+            commitment, eval, proof = self.rpc_commit_and_open(
+                synapse.index, synapse.poly, synapse.alpha
+            )
             elapsed = time.perf_counter() - before
             bt.logging.info(f"Proof generation completed in {elapsed} seconds")
 
             synapse = Prove(
                 # Send back empty values to save bandwidth
+                index=synapse.index,
                 poly=[],
-                x=None,
+                alpha=None,
                 # These are the only values we care about sending back
                 eval=eval,
                 commitment=commitment,
