@@ -126,6 +126,7 @@ class Validator(BaseValidatorNeuron):
         except Exception as e:
             bt.logging.error(f"Failed to generate a query challenge: {e}")
             bt.logging.error("Retrying in 5 seconds...")
+            time.sleep(5)
 
     def reward(
         self,
@@ -181,11 +182,16 @@ class Validator(BaseValidatorNeuron):
     async def query(self, challenge: Challenge):
         """
         Query the connected miners with a challenge
+        Each miner will receive a different challenge and each challenge can be independently verified.
+        The sum of all valid solutions can be used to generate a larger commitment, although not yet implemented, and not necessary for checking miner honesty.
         """
         miner_uids = get_random_uids(
             self, k=min(self.config.neuron.sample_size, self.metagraph.n.item())
         )
-        timeout = 30.
+
+        if len(miner_uids) == 0:
+            raise Exception("No miners available to query.")
+        timeout = 30.0
 
         # We have to create seperate tasks for each miner to query them concurrently.
         # This is because the default dendrite implementation only supports
@@ -203,6 +209,14 @@ class Validator(BaseValidatorNeuron):
         ]
 
         responses = [response[0] for response in await asyncio.gather(*tasks)]
+        if all(
+            [
+                response.commitment is None and response.proof is None
+                for response in responses
+            ]
+        ):
+            bt.logging.error("No responses received.")
+            raise Exception("No responses received.")
 
         # Adjust the scores based on responses from miners.
         rewards = self.get_rewards(challenge, responses, timeout)
