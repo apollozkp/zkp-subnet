@@ -118,7 +118,7 @@ class Miner(BaseMinerNeuron):
 
             synapse = Prove(
                 # Send back empty values to save bandwidth
-                index=synapse.index,
+                index=int(synapse.index),
                 poly=[],
                 alpha=None,
                 # These are the only values we care about sending back
