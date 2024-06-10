@@ -15,20 +15,19 @@
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
-import time
-import torch
+import argparse
 import asyncio
 import threading
-import argparse
+import time
 import traceback
 
 import bittensor as bt
 from bittensor.errors import NotVerifiedException
+from fourier import Client
 
 from base.neuron import BaseNeuron
 from utils.config import add_miner_args
 
-from fourier import Client
 
 class BaseMinerNeuron(BaseNeuron):
     """
@@ -59,7 +58,7 @@ class BaseMinerNeuron(BaseNeuron):
         self.axon = bt.axon(wallet=self.wallet, config=self.config)
 
         # Attach determiners which functions are called when servicing a request.
-        bt.logging.info(f"Attaching forward function to miner axon.")
+        bt.logging.info("Attaching forward function to miner axon.")
         self.axon.attach(
             forward_fn=self.forward,
             blacklist_fn=self.blacklist,
@@ -69,8 +68,16 @@ class BaseMinerNeuron(BaseNeuron):
 
         # Start the local ZKG RPC server.
         PORT = 1337
-        self.client = Client(port=PORT, bin=self.config.prover_path)
-        self.client.start()
+        self.client = Client(
+            port=PORT,
+            bin=self.config.prover_path,
+            uncompressed=self.config.uncompressed,
+            setup_path=self.config.setup_path,
+            precompute_path=self.config.precompute_path,
+        )
+        self.client.start(
+            scale=self.config.scale, machines_scale=self.config.machines_scale
+        )
 
         # Instantiate runners
         self.should_exit: bool = False

@@ -25,7 +25,7 @@ WORKDIR /
 
 # TODO: fix the fourier package so this is not necessary
 # Pull the fourier package
-RUN git clone https://github.com/apollozkp/fourier.git
+RUN git clone https://github.com/apollozkp/fourier.git && cd fourier && git checkout pianist && git pull && cd ..
 WORKDIR /fourier
 RUN cargo build --release
 

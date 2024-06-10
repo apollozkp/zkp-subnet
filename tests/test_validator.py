@@ -15,10 +15,21 @@
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
+from typing import List, Tuple
+
 import pytest
 
 from base.protocol import Prove
-from neurons.validator import Validator
+from neurons.validator import Challenge, Validator
+from tests.conftest import (
+    TEST_BINARY,
+    TEST_MACHINES_SCALE,
+    TEST_PRECOMPUTE_PATH,
+    TEST_SCALE,
+    TEST_SETUP_PATH,
+)
+
+TEST_MACHINE_COUNT = 2
 
 
 @pytest.fixture(scope="module")
@@ -31,6 +42,14 @@ def setup_validator():
     config.neuron.device = "cpu"
     config.wallet.name = "valimock"
     config.wallet.hotkey = "valimockhotkey"
+
+    # Client setup
+    config.scale = TEST_SCALE
+    config.machines_scale = TEST_MACHINES_SCALE
+    config.setup_path = TEST_SETUP_PATH
+    config.precompute_path = TEST_PRECOMPUTE_PATH
+    config.prover_path = f"./{TEST_BINARY}"
+
     validator = Validator(config)
     yield validator
     validator.subtensor.reset()
@@ -40,11 +59,11 @@ def setup_validator():
 @pytest.mark.parametrize(
     "missing_info,too_late,invalid_proof,half_time,expected_value",
     [
-        (False, False, False, False, 1.0),
-        (True, False, False, False, 0.0),
-        (False, True, False, False, 0.0),
-        (False, False, True, False, 0.0),
-        (False, False, False, True, 0.5),
+        (False, False, False, False, [1.0, 1.0]),
+        (True, False, False, False, [0.0, 1.0]),
+        (False, True, False, False, [0.0, 1.0]),
+        (False, False, True, False, [0.0, 1.0]),
+        (False, False, False, True, [0.5, 1.0]),
     ],
 )
 def test_reward(
@@ -64,64 +83,78 @@ def test_reward(
         return proof_plus_one if has_prefix else proof_plus_one[2:]
 
     validator = setup_validator
-    challenge = make_proof(validator)
-    simulated_response = challenge
-    simulated_response.dendrite.process_time = 0.0
+    challenge, responses, is_valid = make_proofs(validator)
+
+    simulated_responses = responses.copy()
+    for simulated_response in simulated_responses:
+        simulated_response.dendrite.process_time = 0.0
 
     timeout = 10.0
 
     if missing_info:
-        simulated_response.commitment = None
+        simulated_responses[0].commitment = None
 
     if too_late:
-        simulated_response.dendrite.process_time = 11.0
+        simulated_responses[0].dendrite.process_time = 11.0
 
     if invalid_proof:
-        simulated_response.proof = change_proof(simulated_response.proof)
+        simulated_responses[0].proof = change_proof(simulated_responses[0].proof)
 
     if half_time:
-        simulated_response.dendrite.process_time = 5.0
+        simulated_responses[0].dendrite.process_time = 5.0
 
     print("challenge", challenge)
     print("simulated_response", simulated_response)
 
-    assert (
-        validator.reward(
-            challenge,
-            simulated_response,
-            timeout,
-        )
-        == expected_value
+    rewards = validator.get_rewards(
+        challenge,
+        simulated_responses,
+        timeout,
     )
+    print("rewards", rewards)
+
+    assert len(rewards) == len(expected_value)
+    for reward, expected in zip(rewards, expected_value):
+        assert reward == expected
 
 
-@pytest.mark.asyncio
-async def test_validator_forward(setup_validator):
-    validator = setup_validator
+def make_proofs(validator) -> Tuple[Challenge, List[Prove], List[bool]]:
+    challenge = validator.generate_challenge(TEST_MACHINE_COUNT)
 
-    proof = make_proof(validator)
+    responses = []
+    for i in range(TEST_MACHINE_COUNT):
+        poly = challenge.polys[i]
+        point = challenge.alpha
+        with validator.client.worker_commit(i, poly) as resp:
+            commitment = resp.json().get("commitment")
 
-    await validator.query(proof)
+        with validator.client.worker_open(i, poly, point) as resp:
+            eval = resp.json().get("eval")
+            proof = resp.json().get("proof")
 
-    for score in validator.scores:
-        assert score > 0.0
+        response = Prove(
+            # Send back empty values to save bandwidth
+            index=i,
+            poly=[],
+            alpha=None,
+            # These are the only values we care about sending back
+            eval=eval,
+            commitment=commitment,
+            proof=proof,
+        )
+        responses.append(response)
 
+    is_valid = []
+    for response in responses:
+        with validator.client.worker_verify(
+            response.index,
+            response.proof,
+            challenge.alpha,
+            response.eval,
+            response.commitment,
+        ) as resp:
+            assert resp.status_code == 200
+            valid = resp.json().get("valid")
+        is_valid.append(valid)
 
-def make_proof(validator):
-    challenge = validator.generate_challenge(10)
-    with validator.client.commit(challenge.poly) as resp:
-        assert resp.status_code == 200
-        commitment = resp.json().get("result").get("commitment")
-
-    with validator.client.open(challenge.poly, challenge.x) as resp:
-        assert resp.status_code == 200
-        proof = resp.json().get("result").get("proof")
-
-    with validator.client.verify(proof, challenge.x, challenge.y, commitment) as resp:
-        assert resp.status_code == 200
-        assert resp.json().get("result").get("valid")
-
-    challenge.commitment = commitment
-    challenge.proof = proof
-    return challenge
-
+    return challenge, responses, is_valid

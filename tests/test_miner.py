@@ -22,6 +22,8 @@ from bittensor.mock.wallet_mock import get_mock_wallet
 from base.neuron import BaseNeuron
 from base.protocol import Prove
 from neurons.miner import Miner
+from tests.conftest import (TEST_BINARY, TEST_MACHINES_SCALE,
+                            TEST_PRECOMPUTE_PATH, TEST_SCALE, TEST_SETUP_PATH)
 
 TEST_POLY = [
     "6945DC5C4FF4DAC8A7278C9B8F0D4613320CF87FF947F21AC9BF42327EC19448",
@@ -42,10 +44,13 @@ TEST_POLY = [
     "723A7640FD7E65473131563AB5514916AC861C2695CE6513E5061E597E5E1A81",
 ]
 
+TEST_WORKER_INDEX = 0
 TEST_POINT = "456006fff56412d329d527901d02877a581a89cfa677ca963eb9d680766234cc"
 TEST_EVAL = "29732a1e0e074ab05ee6a9e57794c5ad1965b98b6c8c6ecde96ac776ea06ff5b"
 
-TEST_SYNAPSE = Prove(poly=TEST_POLY, x=TEST_POINT, y=TEST_EVAL)
+TEST_SYNAPSE = Prove(
+    index=TEST_WORKER_INDEX, poly=TEST_POLY, alpha=TEST_POINT, eval=TEST_EVAL
+)
 
 
 @pytest.fixture(scope="module")
@@ -56,35 +61,56 @@ def setup_miner():
     config.wallet.name = "minermock"
     config.wallet.hotkey = "minermockhotkey"
     config.neuron.dont_save_events = True
+
+    # Client configuration
+    config.scale = TEST_SCALE
+    config.machines_scale = TEST_MACHINES_SCALE
+    config.setup_path = TEST_SETUP_PATH
+    config.precompute_path = TEST_PRECOMPUTE_PATH
+    config.prover_path = f"./{TEST_BINARY}"
+
     miner = Miner(config)
     yield miner
     miner.subtensor.reset()
     miner.stop_run_thread()
 
 
-@pytest.mark.parametrize("include_x", [True, False])
-def test_miner_forward(setup_miner, include_x):
+@pytest.mark.parametrize("include_point", [True, False])
+def test_miner_forward(setup_miner, include_point):
     miner = setup_miner
 
-    with miner.client.commit(TEST_SYNAPSE.poly) as resp:
+    with miner.client.worker_commit(
+        i=TEST_SYNAPSE.index, poly=TEST_SYNAPSE.poly
+    ) as resp:
         assert resp.status_code == 200
-        commitment = resp.json().get("result", {}).get("commitment")
+        commitment = resp.json().get("commitment")
 
-    with miner.client.open(TEST_SYNAPSE.poly, TEST_SYNAPSE.x) as resp:
+    with miner.client.worker_open(
+        i=TEST_SYNAPSE.index, poly=TEST_SYNAPSE.poly, x=TEST_SYNAPSE.alpha
+    ) as resp:
         assert resp.status_code == 200
-        proof = resp.json().get("result", {}).get("proof")
+        eval = resp.json().get("eval")
+        proof = resp.json().get("proof")
 
-    with miner.client.verify(proof, TEST_SYNAPSE.x, TEST_SYNAPSE.y, commitment) as resp:
+    with miner.client.worker_verify(
+        i=TEST_SYNAPSE.index,
+        proof=proof,
+        alpha=TEST_SYNAPSE.alpha,
+        eval=eval,
+        commitment=commitment,
+    ) as resp:
         assert resp.status_code == 200
-        assert resp.json().get("result", {}).get("valid")
+        valid = resp.json().get("valid")
+
+    assert valid
 
     synapse = TEST_SYNAPSE
-    if not include_x:
-        synapse.x = None
+    if not include_point:
+        synapse.alpha = None
 
     ret_synapse = miner.forward(TEST_SYNAPSE)
 
-    if include_x:
+    if include_point:
         assert ret_synapse.commitment == commitment
         assert ret_synapse.proof == proof
 
@@ -102,10 +128,10 @@ async def test_miner_blacklist(setup_miner, allow_non_registered, force_vpermit)
     miner.metagraph.validator_permit[uid] = force_vpermit
 
     poly = ["123", "456"]
-    synapse = Prove(poly=poly)
+    synapse = Prove(index=0, poly=poly, alpha="789")
     synapse.dendrite.hotkey = miner.wallet.hotkey.ss58_address
 
-    outside_synapse = Prove(poly=poly)
+    outside_synapse = Prove(index=0, poly=poly, alpha="789")
     outside_wallet = get_mock_wallet()
     outside_synapse.dendrite.hotkey = outside_wallet.hotkey.ss58_address
 
@@ -122,6 +148,6 @@ async def test_miner_blacklist(setup_miner, allow_non_registered, force_vpermit)
 @pytest.mark.asyncio
 async def test_miner_priority(setup_miner):
     miner = setup_miner
-    synapse = Prove(poly=["a"])
+    synapse = Prove(index=0, poly=["123", "456"], alpha="789")
     synapse.dendrite.hotkey = miner.wallet.hotkey.ss58_address
     assert await miner.priority(synapse) > 0

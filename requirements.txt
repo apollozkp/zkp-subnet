@@ -1,4 +1,3 @@
-bittensor==6.9.3
-torch==1.13.1
+bittensor
 pytest-cov==5.0.0
-fourier @ git+https://github.com/apollozkp/fourier.git
+fourier @ git+https://github.com/apollozkp/fourier.git@pianist
