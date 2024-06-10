@@ -42,9 +42,8 @@ def compile_prover_lib():
     subprocess.check_call("cargo build --release", shell=True)
 
     subprocess.check_call(
-        f"ln -s target/release/fourier ../{TEST_BINARY}", shell=True
+        f"mv target/release/fourier ../{TEST_BINARY}", shell=True
     )
-    # subprocess.check_call("mv target/release/fourier ../prover", shell=True)
 
     os.chdir(base_path)
     subprocess.check_call(f"chmod u+x ./{TEST_BINARY}", shell=True)
