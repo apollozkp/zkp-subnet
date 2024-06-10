@@ -15,16 +15,25 @@
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
-FOURIER_URL = "https://github.com/apollozkp/fourier"
+import os
+import subprocess
 
 import pytest
-import subprocess
-import os
+
+REPO_NAME = "fourier"
+FOURIER_URL = "https://github.com/apollozkp/fourier"
+
+TEST_SCALE = 6
+TEST_MACHINES_SCALE = 2
+TEST_SETUP_PATH = "test_setup.compressed"
+TEST_PRECOMPUTE_PATH = "test_precompute.compressed"
+TEST_BINARY = "test_prover"
+
 
 @pytest.fixture(scope="session", autouse=True)
 def compile_prover_lib():
-    if os.path.exists("fourier"):
-        subprocess.check_call("rm -rf fourier", shell=True)
+    if os.path.exists(REPO_NAME):
+        subprocess.check_call(f"rm -rf {REPO_NAME}", shell=True)
 
     subprocess.check_call(f"git clone {FOURIER_URL}", shell=True)
 
@@ -32,21 +41,38 @@ def compile_prover_lib():
     os.chdir("fourier")
     subprocess.check_call("cargo build --release", shell=True)
 
-    subprocess.check_call("mv target/release/fourier ../prover", shell=True)
+    subprocess.check_call(
+        f"ln -s target/release/fourier ../{TEST_BINARY}", shell=True
+    )
+    # subprocess.check_call("mv target/release/fourier ../prover", shell=True)
+
     os.chdir(base_path)
-    subprocess.check_call("chmod u+x prover", shell=True)
-    subprocess.check_call("./prover setup --setup-path setup --precompute-path precompute --scale 4 --generate-setup --generate-precompute --overwrite", shell=True)
+    subprocess.check_call(f"chmod u+x ./{TEST_BINARY}", shell=True)
+    subprocess.check_call(
+        " ".join(
+            [
+                f"./{TEST_BINARY} setup",
+                f"--setup-path {TEST_SETUP_PATH}",
+                f"--precompute-path {TEST_PRECOMPUTE_PATH}",
+                f"--scale {TEST_SCALE}",
+                f"--machines-scale {TEST_MACHINES_SCALE}",
+                "--generate-setup",
+                "--generate-precompute",
+                "--overwrite",
+            ]
+        ),
+        # "./prover setup --setup-path setup --precompute-path precompute --scale 6 --machines-scale 4 --generate-setup --generate-precompute --overwrite",
+        shell=True,
+    )
+
 
 @pytest.fixture(scope="session", autouse=True)
 def cleanup_env(request):
     def cleanup():
-        if os.path.exists("fourier"):
-            subprocess.check_call("rm -rf fourier", shell=True)
-        if os.path.exists("prover"):
-            subprocess.check_call("rm prover", shell=True)
-        if os.path.exists("setup"):
-            subprocess.check_call("rm setup", shell=True)
-        if os.path.exists("precompute"):
-            subprocess.check_call("rm precompute", shell=True)
+        if os.path.exists(REPO_NAME):
+            subprocess.check_call(f"rm -rf {REPO_NAME}", shell=True)
+        for file in [TEST_BINARY, TEST_SETUP_PATH, TEST_PRECOMPUTE_PATH]:
+            if os.path.exists(file):
+                subprocess.check_call(f"rm {file}", shell=True)
 
     request.addfinalizer(cleanup)

@@ -30,13 +30,13 @@ class Prove(bt.Synapse):
         ...,
         title="Worker Index",
         description="The Index that the miner should use to identify itself.",
-        allow_mutation=False,
+        frozen=True,
     )
     poly: List[str] = Field(
         ...,
         title="Polynomial",
         description="The polynomial to prove.",
-        allow_mutation=False,
+        frozen=True,
     )
     alpha: Optional[str] = Field(
         title="Input",
