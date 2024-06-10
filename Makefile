@@ -21,11 +21,17 @@ prover: .ensure-deps
 	cd fourier && . "$$HOME/.cargo/env" && cargo build --release && mv target/release/fourier ../prover
 	rm -rf fourier
 
-setup:
-	curl -o setup https://apollozkp.s3.eu-north-1.amazonaws.com/setup
+testnet-setup:
+	curl -o setup_20_10.uncompressed https://apollozkp.s3.eu-north-1.amazonaws.com/setup_20_10.uncompressed
 
-precompute:
-	curl -o precompute https://apollozkp.s3.eu-north-1.amazonaws.com/precompute
+testnet-precompute:
+	curl -o precompute_20_10.uncompressed https://apollozkp.s3.eu-north-1.amazonaws.com/precompute_20_10.uncompressed
+
+mainnet-setup:
+	curl -o setup_24_10.uncompressed https://apollozkp.s3.eu-north-1.amazonaws.com/setup_24_10.uncompressed
+
+mainnet-precompute:
+	curl -o precompute_24_10.uncompressed https://apollozkp.s3.eu-north-1.amazonaws.com/precompute_24_10.uncompressed
 
 check-env:
 	@if [ -z "$${WALLET_NAME}" ]; then \
@@ -40,20 +46,20 @@ check-env:
 python-setup:
 	pip install -r requirements.txt && python3 -m pip install -e .
 
-miner: setup precompute prover python-setup check-env
+miner: mainnet-setup mainnet-precompute prover python-setup check-env
 	pm2 start neurons/miner.py --interpreter python3 -- --netuid 10 --wallet.name $(WALLET_NAME) --wallet.hotkey $(HOTKEY_NAME) --logging.debug
 
-validator: setup precompute prover python-setup check-env
+validator: mainnet-setup mainnet-precompute prover python-setup check-env
 	pm2 start neurons/validator.py --interpreter python3 -- --netuid 10 --wallet.name $(WALLET_NAME) --wallet.hotkey $(HOTKEY_NAME) --logging.debug
 
-miner-testnet: setup precompute prover python-setup check-env
+miner-testnet: testnet-setup testnet-precompute prover python-setup check-env
 	pm2 start neurons/miner.py --interpreter python3 -- --netuid 115 --subtensor.network test --wallet.name $(WALLET_NAME) --wallet.hotkey $(HOTKEY_NAME) --logging.debug
 
-validator-testnet: setup precompute prover python-setup check-env
+validator-testnet: testnet-setup testnet-precompute prover python-setup check-env
 	pm2 start neurons/validator.py --interpreter python3 -- --netuid 115 --subtensor.network test --wallet.name $(WALLET_NAME) --wallet.hotkey $(HOTKEY_NAME) --logging.debug
 
-miner-staging: setup precompute prover python-setup check-env
+miner-staging: testnet-setup testnet-precompute prover python-setup check-env
 	pm2 start neurons/miner.py --interpreter python3 -- --netuid 1 --subtensor.chain_endpoint ws://127.0.0.1:9946 --wallet.name $(WALLET_NAME) --wallet.hotkey $(HOTKEY_NAME) --logging.debug
 
-validator-staging: setup precompute prover python-setup check-env
+validator-staging: testnet-setup testnet-precompute prover python-setup check-env
 	pm2 start neurons/validator.py --interpreter python3 -- --netuid 1 --subtensor.chain_endpoint ws://127.0.0.1:9946 --wallet.name $(WALLET_NAME) --wallet.hotkey $(HOTKEY_NAME) --logging.debug
