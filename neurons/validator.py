@@ -33,12 +33,13 @@ from utils.uids import get_random_uids
 
 
 class Challenge:
-    def __init__(self, polys: List[List[str]], alpha: str):
+    def __init__(self, polys: List[List[str]], alpha: str, evals: List[str]):
         self.polys = polys
         self.alpha = alpha
+        self.evals = evals
 
     def to_synapse(self, i: int) -> Prove:
-        return Prove(index=i, poly=self.polys[i], alpha=self.alpha)
+        return Prove(index=i, poly=self.polys[i], eval=self.evals[i], alpha=self.alpha)
 
 
 class Validator(BaseValidatorNeuron):
@@ -63,7 +64,8 @@ class Validator(BaseValidatorNeuron):
                 raise Exception("Failed to commit to the polynomial.")
             return response.json().get("poly")
 
-    def rpc_random_poly(self) -> str:
+    # Returns a random bivariate polynomial f(X, Y) as coefficients
+    def rpc_random_poly(self) -> List[List[str]]:
         with self.client.random_poly() as response:
             if response.status_code != 200:
                 bt.logging.error(
@@ -99,7 +101,7 @@ class Validator(BaseValidatorNeuron):
                     f"RPC request failed with status: {response.status_code}"
                 )
                 raise Exception("Failed to evaluate the polynomial.")
-            return response.json().get("eval")
+            return response.json().get("y")
 
     def generate_challenge(self, machines_count: int) -> Challenge:
         """
@@ -109,11 +111,13 @@ class Validator(BaseValidatorNeuron):
         # Generate a random polynomial.
         poly = self.rpc_random_poly()
         alpha = self.rpc_random_x()
-        polys = [
-            self.rpc_fft(poly=poly[i], left=True, inverse=True)
-            for i in range(machines_count)
-        ]
-        return Challenge(polys=polys, alpha=alpha)
+        evals = []
+        for i in range(machines_count):
+            fft_coeffs = self.rpc_fft(poly[i], left=True, inverse=True)
+            eval = self.rpc_eval(fft_coeffs, alpha)
+            evals.append(eval)
+
+        return Challenge(polys=poly, alpha=alpha, evals=evals)
 
     async def forward(self):
         try:
@@ -149,12 +153,20 @@ class Validator(BaseValidatorNeuron):
             bt.logging.warning("Received proof which was too slow.")
             return 0.0
 
+        # We take the proof and commitment from the response
+        proof = response.proof
+        commitment = response.commitment
+
+        # We take the index, alpha and eval from the challenge
+        # NOTE: it may be tempting to take the eval from the response
+        # However, this would be a security vulnerability as the miner could
+        # commit to a different polynomial entirely
+        index = challenge.index
+        alpha = challenge.alpha
+        eval = challenge.eval
+
         valid = self.rpc_worker_verify(
-            i=response.index,
-            proof=response.proof,
-            alpha=challenge.alpha,
-            eval=response.eval,
-            commitment=response.commitment,
+            i=index, proof=proof, alpha=alpha, eval=eval, commitment=commitment
         )
 
         if not valid:

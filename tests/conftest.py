@@ -39,6 +39,7 @@ def compile_prover_lib():
 
     base_path = os.getcwd()
     os.chdir("fourier")
+    subprocess.check_call("git checkout move_fft", shell=True)
     subprocess.check_call("cargo build --release", shell=True)
 
     subprocess.check_call(
@@ -73,5 +74,7 @@ def cleanup_env(request):
         for file in [TEST_BINARY, TEST_SETUP_PATH, TEST_PRECOMPUTE_PATH]:
             if os.path.exists(file):
                 subprocess.check_call(f"rm {file}", shell=True)
+
+        subprocess.check_call(f"pkill {TEST_BINARY}", shell=True)
 
     request.addfinalizer(cleanup)

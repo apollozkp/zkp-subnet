@@ -153,7 +153,7 @@ def make_proofs(validator) -> Tuple[Challenge, List[Prove], List[bool]]:
             response.index,
             response.proof,
             challenge.alpha,
-            response.eval,
+            challenge.evals[response.index],
             response.commitment,
         ) as resp:
             assert resp.status_code == 200
