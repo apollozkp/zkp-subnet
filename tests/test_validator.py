@@ -15,6 +15,7 @@
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
+import base64
 from typing import List, Tuple
 
 import pytest
@@ -74,13 +75,15 @@ def test_reward(
     half_time,
     expected_value,
 ):
+
     def change_proof(proof: str):
         # Update if we change to base64
-        has_prefix = proof[:2] == "0x"
-        n_bytes = len(proof) // 2 - (1 if has_prefix else 0)
+        decoded_proof = base64.b64decode(proof)
+        n_bytes = len(decoded_proof)
         # LE or BE doesn't matter, just need >1 bit to change
-        proof_plus_one = hex(int(proof, 16) + 1 % 2 ** (n_bytes * 8))
-        return proof_plus_one if has_prefix else proof_plus_one[2:]
+        proof_plus_one = int.from_bytes(decoded_proof, "big") + 1 % 2 ** (n_bytes * 8)
+        proof_plus_one_bytes = proof_plus_one.to_bytes(n_bytes, "big")
+        return base64.b64encode(proof_plus_one_bytes).decode()
 
     validator = setup_validator
     challenge, responses, is_valid = make_proofs(validator)
