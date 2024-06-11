@@ -58,7 +58,7 @@ check-env:
 	fi
 
 python-setup:
-	python3 -m pip install -r requirements.txt && python3 -m pip install -e .
+	pip install -r requirements.txt && pip install -e .
 
 miner: mainnet-setup mainnet-precompute prover python-setup check-env RUST_LOG=$(RUST_LOG)
 	pm2 start neurons/miner.py \

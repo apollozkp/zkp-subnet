@@ -129,6 +129,28 @@ When registered and running, you can increase your stake to the subnet by runnin
 btcli stake add --wallet.name validator --wallet.hotkey default
 ```
 
+### Troubleshooting
+
+Any issues you may run into can be discussed in the [Discord](https://discord.com/channels/799672011265015819/1222672871092912262).
+Some common issues are:
+
+**I'm running into python errors while running the make command**
+
+Make sure you have permissions to run the make command. If you don't, you can run the command with `sudo`.
+If you're still running into issues, please let us know in the [Discord](https://discord.com/channels/799672011265015819/1222672871092912262).
+
+**I'm not receiving requests**
+
+Syncing the metagraph can take up to 20 minutes. Please allow for some time before you start receiving requests.
+If you are still not receiving requests, make sure that the necessary ports are open on your server.
+The default ports for receiving requests is `8091`.
+To see which port the metagraph has you on, you can run:
+```bash
+    btcli subnet metagraph --netuid NETUID --subtensor.network test/mainnet
+```
+And look for the `AXON` field for your miner/validator.
+It should look like `<your_ip>:<your_port>`.
+
 ## Contributing
 
 Please see the [contribution guidelines](./contrib/CONTRIBUTING.md) for details.
