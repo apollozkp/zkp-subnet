@@ -42,6 +42,8 @@ class BaseMinerNeuron(BaseNeuron):
         add_miner_args(cls, parser)
 
     def __init__(self, config=None):
+        bt.logging.on()
+        bt.turn_console_on()
         super().__init__(config=config)
 
         # Warn if allowing incoming requests from anyone.

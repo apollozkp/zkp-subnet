@@ -45,6 +45,8 @@ class BaseValidatorNeuron(BaseNeuron):
         add_validator_args(cls, parser)
 
     def __init__(self, config=None):
+        bt.logging.on()
+        bt.turn_console_on()
         super().__init__(config=config)
 
         # Save a copy of the hotkeys to local memory.

@@ -66,7 +66,6 @@ miner: mainnet-setup mainnet-precompute prover python-setup check-env RUST_LOG=$
 		-- --netuid 10 \
 		--wallet.name $(WALLET_NAME) \
 		--wallet.hotkey $(HOTKEY_NAME) \
-		--logging.debug \
 		--prover_path ./prover \
 		--setup_path ./setup_24_8.uncompressed \
 		--precompute_path ./precompute_24_8.uncompressed \
@@ -80,7 +79,6 @@ validator: mainnet-setup mainnet-precompute prover python-setup check-env
 		-- --netuid 10 \
 		--wallet.name $(WALLET_NAME) \
 		--wallet.hotkey $(HOTKEY_NAME) \
-		--logging.debug \
 		--prover_path ./prover \
 		--setup_path ./setup_24_8.uncompressed \
 		--precompute_path ./precompute_24_8.uncompressed \
@@ -90,18 +88,17 @@ validator: mainnet-setup mainnet-precompute prover python-setup check-env
 
 miner-testnet: testnet-setup testnet-precompute prover python-setup check-env 
 	RUST_LOG=debug && pm2 start neurons/miner.py \
-		--interpreter python3 \
-		-- --netuid 115 \
-		--subtensor.network test \
-		--wallet.name $(WALLET_NAME) \
-		--wallet.hotkey $(HOTKEY_NAME) \
-		--logging.debug \
-		--prover_path ./prover \
-		--setup_path ./setup_20_8.uncompressed \
-		--precompute_path ./precompute_20_8.uncompressed \
-		--scale 20 \
-		--machines_scale 8 \
-		--uncompressed true
+		 --interpreter python3 \
+		 -- --netuid 115 \
+		 --subtensor.network test \
+		 --wallet.name $(WALLET_NAME) \
+		 --wallet.hotkey $(HOTKEY_NAME) \
+		 --prover_path ./prover \
+		 --setup_path ./setup_20_8.uncompressed \
+		 --precompute_path ./precompute_20_8.uncompressed \
+		 --scale 20 \
+		 --machines_scale 8 \
+		 --uncompressed true
 
 
 validator-testnet: testnet-setup testnet-precompute prover python-setup check-env 
@@ -111,7 +108,6 @@ validator-testnet: testnet-setup testnet-precompute prover python-setup check-en
 		--subtensor.network test \
 		--wallet.name $(WALLET_NAME) \
 		--wallet.hotkey $(HOTKEY_NAME) \
-		--logging.debug \
 		--prover_path ./prover \
 		--setup_path ./setup_20_8.uncompressed \
 		--precompute_path ./precompute_20_8.uncompressed \
@@ -126,7 +122,6 @@ miner-staging: testnet-setup testnet-precompute prover python-setup check-env
 		--subtensor.chain_endpoint ws://127.0.0.1:9946 \
 		--wallet.name $(WALLET_NAME) \
 		--wallet.hotkey $(HOTKEY_NAME) \
-		--logging.debug \
 		--prover_path ./prover \
 		--setup_path ./setup_20_8.uncompressed \
 		--precompute_path ./precompute_20_8.uncompressed \
@@ -141,7 +136,6 @@ validator-staging: testnet-setup testnet-precompute prover python-setup check-en
 		--subtensor.chain_endpoint ws://127.0.0.1:9946 \
 		--wallet.name $(WALLET_NAME) \
 		--wallet.hotkey $(HOTKEY_NAME) \
-		--logging.debug \
 		--prover_path ./prover \
 		--setup_path ./setup_20_8.uncompressed \
 		--precompute_path ./precompute_20_8.uncompressed \
