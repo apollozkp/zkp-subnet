@@ -28,16 +28,24 @@ prover: .ensure-deps
 	rm -rf fourier
 
 testnet-setup:
-	curl -o setup_20_8.uncompressed https://apollozkp.s3.eu-north-1.amazonaws.com/setup_20_8.uncompressed
+	if [ ! -f setup_20_8.uncompressed ]; then \
+		curl -o setup_20_8.uncompressed https://apollozkp.s3.eu-north-1.amazonaws.com/setup_20_8.uncompressed; \
+	fi
 
 testnet-precompute:
-	curl -o precompute_20_8.uncompressed https://apollozkp.s3.eu-north-1.amazonaws.com/precompute_20_8.uncompressed
+	if [ ! -f precompute_20_8.uncompressed ]; then \
+		curl -o precompute_20_8.uncompressed https://apollozkp.s3.eu-north-1.amazonaws.com/precompute_20_8.uncompressed; \
+	fi
 
 mainnet-setup:
-	curl -o setup_24_8.uncompressed https://apollozkp.s3.eu-north-1.amazonaws.com/setup_24_8.uncompressed
+	if [ ! -f setup_24_8.uncompressed ]; then \
+		curl -o setup_24_8.uncompressed https://apollozkp.s3.eu-north-1.amazonaws.com/setup_24_8.uncompressed; \
+	fi
 
 mainnet-precompute:
-	curl -o precompute_24_8.uncompressed https://apollozkp.s3.eu-north-1.amazonaws.com/precompute_24_8.uncompressed
+	if [ ! -f precompute_24_8.uncompressed ]; then \
+		curl -o precompute_24_8.uncompressed https://apollozkp.s3.eu-north-1.amazonaws.com/precompute_24_8.uncompressed; \
+	fi
 
 check-env:
 	@if [ -z "$${WALLET_NAME}" ]; then \
