@@ -4,12 +4,12 @@
 RUST_LOG=debug
 
 clean:
-	rm prover
-	rm setup_20_8.uncompressed
-	rm precompute_20_8.uncompressed
-	rm setup_24_8.uncompressed
-	rm precompute_24_8.uncompressed
-	rm .ensure-deps
+	-rm prover
+	-rm setup_20_8.uncompressed
+	-rm precompute_20_8.uncompressed
+	-rm setup_24_8.uncompressed
+	-rm precompute_24_8.uncompressed
+	-rm .ensure-deps
 
 .ensure-deps:
 	sudo apt-get update && sudo apt-get install nodejs npm
