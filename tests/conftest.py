@@ -74,4 +74,6 @@ def cleanup_env(request):
             if os.path.exists(file):
                 subprocess.check_call(f"rm {file}", shell=True)
 
+        subprocess.check_call(f"pkill {TEST_BINARY}", shell=True)
+
     request.addfinalizer(cleanup)
