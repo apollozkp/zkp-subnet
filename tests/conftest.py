@@ -39,7 +39,6 @@ def compile_prover_lib():
 
     base_path = os.getcwd()
     os.chdir("fourier")
-    subprocess.check_call("git checkout move_fft", shell=True)
     subprocess.check_call("cargo build --release", shell=True)
 
     subprocess.check_call(
