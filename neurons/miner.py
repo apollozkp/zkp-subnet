@@ -108,7 +108,7 @@ class Miner(BaseMinerNeuron):
         Query the connected ZKG RPC server (prove).
         """
         try:
-            bt.logging.info("Received synapse on prove")
+            bt.logging.info("Received synapse on prove, starting proof generation...")
             before = time.perf_counter()
             commitment, eval, proof = self.rpc_commit_and_open(
                 synapse.index, synapse.poly, synapse.alpha

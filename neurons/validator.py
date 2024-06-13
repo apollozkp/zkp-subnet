@@ -205,6 +205,7 @@ class Validator(BaseValidatorNeuron):
             raise Exception("No miners available to query.")
         timeout = 30.0
 
+        bt.logging.info(f"Querying {len(miner_uids)} miners with challenge.")
         # We have to create seperate tasks for each miner to query them concurrently.
         # This is because the default dendrite implementation only supports
         # querying several axons with the same synapse.
@@ -229,6 +230,12 @@ class Validator(BaseValidatorNeuron):
         ):
             bt.logging.error("No responses received.")
             raise Exception("No responses received.")
+
+        response_count = [
+            response.commitment is not None and response.proof is not None
+            for response in responses
+        ].count(True)
+        bt.logging.info(f"Received {response_count} responses.")
 
         # Adjust the scores based on responses from miners.
         rewards = self.get_rewards(challenge, responses, timeout)
