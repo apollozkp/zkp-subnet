@@ -163,6 +163,13 @@ def add_args(cls, parser):
         default=8,
     )
 
+    parser.add_argument(
+        "--debug",
+        action="store_true",
+        help="Turn on debug mode.",
+        default=False,
+    )
+
 
 def add_miner_args(cls, parser):
     """Add miner specific arguments to the parser."""

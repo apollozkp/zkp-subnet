@@ -43,6 +43,8 @@ class BaseMinerNeuron(BaseNeuron):
 
     def __init__(self, config=None):
         bt.logging.on()
+        if config and config.debug:
+            bt.debug()
         bt.turn_console_on()
         super().__init__(config=config)
 
